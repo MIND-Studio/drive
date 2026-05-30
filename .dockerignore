@@ -1,0 +1,29 @@
+# Keep the build context small and prevent host artifacts from clobbering
+# the image's npm-ci'd node_modules during `COPY . .`.
+node_modules
+.next
+.git
+.github
+
+# Local pod / indexer / build state — never belongs in an image.
+.css-data
+.home-data
+.drive-data
+.builder-data
+.indexer-data
+
+# Secrets and local env.
+.env
+.env.*
+!.env.example
+
+# Misc
+*.tgz
+*.log
+npm-debug.log*
+.DS_Store
+Dockerfile
+.dockerignore
+README.md
+docs
+tests

@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* @mind-studio/ui tokens — needed by the shared MindAppLauncher dropdown.
+   Direct path (not the "@mind-studio/ui/styles.css" exports subpath) so
+   Tailwind v4's CSS @import resolver finds it on disk. */
+@import "../../node_modules/@mind-studio/ui/dist/styles.css";
+@source "../../node_modules/@mind-studio/ui/dist";
+
+/* @mind-studio/ui's base layer sets `* { border-color: var(--border) }`, which
+   would recolor Mind Drive's bespoke bare-`border` elements. Restore the
+   Tailwind default so only the launcher (which sets its own colors) is themed
+   by @mind-studio/ui; Drive keeps its paper/ink borders. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: currentColor;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mind Drive — design tokens                                         */
+/*                                                                     */
+/*  Paper/ink family shared across all Mind prototypes. Accent shifts  */
+/*  to a deep slate-blue ("cloud storage") to mark "this is the file   */
+/*  layer". (market=turquoise, codespaces=amber, os=green, drive=blue) */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --paper: #fbfaf6;
+  --paper-soft: #f4f1eb;
+  --paper-sunk: #e9e4d9;
+
+  --ink: #1f1d1a;
+  --ink-soft: #524d45;
+  --ink-faint: #8a8378;
+  --ink-trace: #d7d1c4;
+
+  --accent: #2f5fa6;
+  --accent-soft: #dce6f5;
+  --accent-deep: #1d3f72;
+
+  --status-ok: #2f8c5b;
+  --status-warn: #c68c2e;
+  --status-bad: #d9534a;
+  --status-bad-soft: #fef2f2;
+  --status-ok-soft: #ecf7f0;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --font-display: var(--font-display, ui-serif, Georgia, serif);
+  --font-body: var(--font-body, ui-sans-serif, system-ui, sans-serif);
+  --font-mono-src: var(
+    --font-mono-src,
+    ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    monospace
+  );
+}
+
+[data-theme="dark"] {
+  --paper: #131211;
+  --paper-soft: #1c1b18;
+  --paper-sunk: #25231f;
+
+  --ink: #f4f0e6;
+  --ink-soft: #c8c2b5;
+  --ink-faint: #8c867a;
+  --ink-trace: #2c2a26;
+
+  --accent: #79a2dc;
+  --accent-soft: #1d3354;
+  --accent-deep: #b5cdee;
+
+  --status-bad: #ef6d63;
+  --status-bad-soft: #2e1614;
+  --status-ok: #58b87f;
+  --status-ok-soft: #14241b;
+  --status-warn: #dba35c;
+}
+
+:root {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.mono {
+  font-family: var(--font-mono-src);
+}
+
+/* Drag-drop highlight */
+.dropzone-active {
+  outline: 2px dashed var(--accent);
+  outline-offset: -6px;
+  background: var(--accent-soft);
+}

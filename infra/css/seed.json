@@ -1,0 +1,12 @@
+[
+  {
+    "email": "alice@mind-drive.local",
+    "password": "dev-only-do-not-use-in-prod",
+    "pods": [{ "name": "alice" }]
+  },
+  {
+    "email": "bob@mind-drive.local",
+    "password": "dev-only-do-not-use-in-prod",
+    "pods": [{ "name": "bob" }]
+  }
+]
