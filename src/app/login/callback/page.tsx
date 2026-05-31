@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { handleIncomingRedirect } from "@inrupt/solid-client-authn-browser";
-import { consumeReturnTo } from "@/lib/solid/auth";
+import { completeLoginRedirect, consumeReturnTo } from "@/lib/solid/auth";
 
 export default function LoginCallbackPage() {
   const router = useRouter();
@@ -14,8 +13,16 @@ export default function LoginCallbackPage() {
     // `router.replace` (not `window.location.replace`) so the in-memory
     // @inrupt session survives — a hard navigation would wipe it and the
     // destination page would render as signed-out.
-    handleIncomingRedirect({ url: window.location.href })
-      .then(() => {
+    //
+    // `completeLoginRedirect` shares one single-flight `handleIncomingRedirect`
+    // with `ensureSession`, so the layout's launcher (mounted here too) can't
+    // redeem the one-time code a second time and reset the session.
+    completeLoginRedirect()
+      .then((info) => {
+        if (!info.isLoggedIn) {
+          setError("Sign-in did not complete. Please try again.");
+          return;
+        }
         const returnTo = consumeReturnTo();
         router.replace(returnTo);
       })
