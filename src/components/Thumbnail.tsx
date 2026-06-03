@@ -46,7 +46,7 @@ export function ImageThumbnail({
   if (error) {
     return (
       <span
-        className={`mono inline-flex items-center justify-center bg-[color:var(--paper-sunk)] text-[10px] uppercase text-[color:var(--ink-faint)] ${className ?? ""}`}
+        className={`inline-flex items-center justify-center bg-muted font-mono text-[10px] uppercase text-muted-foreground ${className ?? ""}`}
         aria-hidden="true"
       >
         img
@@ -57,7 +57,7 @@ export function ImageThumbnail({
   if (!src) {
     return (
       <span
-        className={`inline-flex items-center justify-center bg-[color:var(--paper-sunk)] ${className ?? ""}`}
+        className={`inline-flex items-center justify-center bg-muted ${className ?? ""}`}
         aria-hidden="true"
       />
     );

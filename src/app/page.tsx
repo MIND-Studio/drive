@@ -1,38 +1,27 @@
 import Link from "next/link";
+import { Button } from "@mind-studio/ui";
 
 export default function Landing() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
-      <p
-        className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]"
-        style={{ fontFamily: "var(--font-mono-src)" }}
-      >
+      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
         Privacy-first file storage on Solid Pods
       </p>
-      <h1
-        className="display mt-4 text-5xl leading-tight sm:text-6xl"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Your <em>files</em>, in your <em>pod</em>.
+      <h1 className="mt-4 text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
+        Your files, in your pod.
       </h1>
-      <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[color:var(--ink-soft)]">
+      <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
         Mind Drive is a Google Drive / Dropbox alternative where every byte
         lives in your Solid Pod — your own storage, on your own terms. No
         central server ever sees your files.
       </p>
       <div className="mt-10 flex flex-wrap gap-3">
-        <Link
-          href="/connect"
-          className="rounded-md bg-[color:var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-[color:var(--accent-deep)]"
-        >
-          Connect a pod
-        </Link>
-        <Link
-          href="/drive"
-          className="rounded-md border border-[color:var(--ink-trace)] px-5 py-3 text-sm text-[color:var(--ink)] hover:border-[color:var(--accent)]"
-        >
-          Open My Drive
-        </Link>
+        <Button asChild size="lg">
+          <Link href="/connect">Connect a pod</Link>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/drive">Open My Drive</Link>
+        </Button>
       </div>
 
       <section className="mt-20 grid gap-8 sm:grid-cols-3">
@@ -56,13 +45,8 @@ export default function Landing() {
 function Feature({ title, body }: { title: string; body: string }) {
   return (
     <div>
-      <p
-        className="display text-lg"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {title}
-      </p>
-      <p className="mt-2 text-sm leading-relaxed text-[color:var(--ink-soft)]">
+      <p className="text-lg font-semibold tracking-tight">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         {body}
       </p>
     </div>

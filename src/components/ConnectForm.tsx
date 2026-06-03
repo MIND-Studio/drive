@@ -8,10 +8,13 @@ import {
   writeLastIdentity,
   clearLastIdentity,
 } from "@mind-studio/core";
+import { Button } from "@mind-studio/ui";
 import { DEFAULT_ISSUER, session, rememberIssuer } from "@/lib/solid/session";
-import { ensureSession, rememberReturnTo } from "@/lib/solid/auth";
+import { ensureSession, rememberReturnToDefault } from "@/lib/solid/auth";
 
 const APP_NAME = "Drive";
+// Mind brand primary (teal), so the login card matches the design system.
+const MIND_ACCENT = "#0d9488";
 
 export default function ConnectForm() {
   const [webId, setWebId] = useState<string | null>(null);
@@ -40,29 +43,20 @@ export default function ConnectForm() {
 
   if (webId) {
     return (
-      <div className="rounded-md border border-[color:var(--accent)] bg-[color:var(--accent-soft)] p-5">
-        <p
-          className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--accent-deep)]"
-          style={{ fontFamily: "var(--font-mono-src)" }}
-        >
+      <div className="rounded-lg border border-primary/40 bg-primary/5 p-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-primary">
           Connected
         </p>
-        <p className="mt-2 mono text-sm break-all" data-testid="webid">
+        <p className="mt-2 break-all font-mono text-sm" data-testid="webid">
           {webId}
         </p>
         <div className="mt-4 flex gap-3">
-          <a
-            href="/drive"
-            className="rounded-md bg-[color:var(--accent)] px-4 py-2 text-sm text-white hover:bg-[color:var(--accent-deep)]"
-          >
-            Open My Drive →
-          </a>
-          <button
-            onClick={onLogout}
-            className="rounded-md border border-[color:var(--ink-trace)] px-4 py-2 text-sm hover:border-[color:var(--accent)]"
-          >
+          <Button asChild>
+            <a href="/drive">Open My Drive →</a>
+          </Button>
+          <Button variant="outline" onClick={onLogout}>
             Disconnect
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -78,15 +72,17 @@ export default function ConnectForm() {
       <MindLoginCard
         appName={APP_NAME}
         defaultIssuer={DEFAULT_ISSUER}
-        accent="#2f5fa6"
+        accent={MIND_ACCENT}
         onLogin={async ({ issuer }) => {
           rememberIssuer(issuer);
-          rememberReturnTo("/drive");
+          // Fall back to /drive only if a deep link wasn't already remembered
+          // by the signed-out screen the user came from.
+          rememberReturnToDefault("/drive");
           await handleLogin({ issuer });
         }}
       />
       {error && (
-        <p className="mt-4 rounded-md border border-[color:var(--status-bad)] bg-[color:var(--status-bad-soft)] px-3 py-2 text-sm text-[color:var(--status-bad)]">
+        <p className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}

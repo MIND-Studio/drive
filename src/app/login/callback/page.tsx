@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@mind-studio/ui";
 import { completeLoginRedirect, consumeReturnTo } from "@/lib/solid/auth";
 
 export default function LoginCallbackPage() {
@@ -33,22 +35,16 @@ export default function LoginCallbackPage() {
     <section className="mx-auto max-w-md px-6 py-20 text-center">
       {error ? (
         <>
-          <p
-            className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--status-bad)]"
-            style={{ fontFamily: "var(--font-mono-src)" }}
-          >
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-destructive">
             Login failed
           </p>
-          <p className="mono mt-3 break-all text-sm">{error}</p>
-          <a
-            href="/connect"
-            className="mt-6 inline-block rounded-md border border-[color:var(--ink-trace)] px-4 py-2 text-sm hover:border-[color:var(--accent)]"
-          >
-            Try again
-          </a>
+          <p className="mt-3 break-all font-mono text-sm">{error}</p>
+          <Button asChild variant="outline" className="mt-6">
+            <Link href="/connect">Try again</Link>
+          </Button>
         </>
       ) : (
-        <p className="text-[color:var(--ink-faint)]">Finishing sign-in…</p>
+        <p className="text-muted-foreground">Finishing sign-in…</p>
       )}
     </section>
   );

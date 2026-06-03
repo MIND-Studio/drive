@@ -32,18 +32,18 @@ Concrete constraints learned in research (see `docs/RESEARCH.md` for citations):
 3. **No telemetry on file contents or names.** Aggregate operation counts only, opt-in.
 4. **Capability links must expire** — no permanent public URLs by default.
 
-## Stack & layout (target — not yet implemented)
+## Stack & layout (as built — M1–M5 shipped)
 
-- `package.json` — Next.js 16 + React 19 + `@inrupt/solid-client` ^3 + `@inrupt/solid-client-authn-browser` + Tailwind v4 + better-sqlite3 (for local search index) + `tsx` for scripts.
-- `docker-compose.yml` — one CSS v7 service on port **3061**, persisting to `.css-data/`.
-- `src/lib/solid/` — pod I/O wrappers. Borrow `pod-fs.ts` from `mind-os-v0` (most mature file I/O) and `pod-client.ts` patterns from `mind-social-network-v0`.
-- `src/app/` — Next.js App Router. `/drive/[...path]` for the browser, `/share/[token]` for capability links, `/api/notifications/*` for the Solid Notifications WebSocket relay if needed.
+- `package.json` — Next.js 16.2.6 + React 19.2.4 + `@inrupt/solid-client` ^3 + `@inrupt/solid-client-authn-browser` (+ `-authn-node` for scripts) + Tailwind v4 + `tsx`. Also consumes the shared `@mind-studio/core` (login card + app launcher) and `@mind-studio/ui` from GitHub Packages, plus `lucide-react` for icons. (No `better-sqlite3`: search is in-browser via `filterEntries` in `DriveBrowser.tsx`, no on-disk index.)
+- **Design system:** the UI is built **entirely on `@mind-studio/ui`** (shadcn-native) on the default **Mind brand**. There is **no bespoke palette** — no `--paper/--ink/--accent` tokens, no custom fonts. `globals.css` only imports `@mind-studio/ui/dist/styles.css` + the dropzone utility; everything else uses semantic Tailwind tokens (`bg-background`, `text-muted-foreground`, `border`, `bg-primary`, `text-destructive`, …). `layout.tsx` wraps the app in `<ThemeProvider theme={mind} defaultTheme="dark" storageKey="mind-drive-theme">` and sets `data-mind-theme="mind"` on `<html>`; light/dark is driven by `useMindTheme()` in `ThemeToggle`. Use ui `Button/Input/Checkbox/Dialog/Tabs/ToggleGroup` rather than hand-rolled controls. (RSC gotcha: don't import `Card`/`Badge`/`cn` into server components — the landing/connect pages stay on plain markup + `Button asChild`.)
+- `docker-compose.yml` — one CSS v7 service on port **3061**, persisting to `.css-data/`. Note: local dev defaults the issuer to the shared `:3011`/prod pod (`.env.local`), so the `:3061` CSS is opt-in.
+- `src/lib/solid/` — pod I/O wrappers: `pod-fs.ts` (file I/O), `auth.ts`/`session.ts` (OIDC), `access.ts` (WAC), `crypto.ts` (PBKDF2-SHA256 envelope encryption).
+- `src/app/` — Next.js App Router: `/drive/[[...path]]` (browser), `/drive/file/[...path]` (file view), `/connect`, `/login` + `/login/callback`. (No `/share/[token]` or `/api/notifications/*` — expiring capability links are deferred to v0.2; sharing is WAC public-link only.)
 - `scripts/seed-demo.ts` — idempotent demo content under `/alice/drive/`.
 
 ## Never commit
 
 - `.css-data/` — pod contents
-- `.indexer-data/` — local search SQLite
 - `.next/` — Next.js cache (wipe with `rm -rf .next` if Turbopack serves stale CSS)
 - `node_modules/`
 

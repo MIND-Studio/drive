@@ -2,6 +2,20 @@
 
 import { useEffect, useState } from "react";
 import {
+  Button,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@mind-studio/ui";
+import {
   getAgentAccess,
   setAgentRead,
   getPublicAccess,
@@ -112,168 +126,127 @@ export default function ShareDialog({
     }
   }
 
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") onClose();
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Share"
-      onKeyDown={onKeyDown}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      data-testid="share-dialog"
-    >
-      <div className="w-full max-w-lg rounded-lg border border-[color:var(--ink-trace)] bg-[color:var(--paper)] p-6 shadow-xl">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p
-              className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]"
-              style={{ fontFamily: "var(--font-mono-src)" }}
-            >
-              Share
-            </p>
-            <h2
-              className="display mt-1 truncate text-xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {resourceName}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-md border border-[color:var(--ink-trace)] px-2 py-1 text-xs hover:border-[color:var(--accent)]"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-lg" data-testid="share-dialog">
+        <DialogHeader>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            Share
+          </p>
+          <DialogTitle className="truncate">{resourceName}</DialogTitle>
+          <DialogDescription>
+            Grant read access by WebID, or publish a public read-only link.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div
-          className="mt-5 inline-flex overflow-hidden rounded-md border border-[color:var(--ink-trace)]"
-          role="tablist"
-        >
-          <button
-            role="tab"
-            aria-selected={tab === "webid"}
-            onClick={() => setTab("webid")}
-            className={`px-4 py-1.5 text-xs ${tab === "webid" ? "bg-[color:var(--accent)] text-white" : "hover:bg-[color:var(--paper-soft)]"}`}
-            data-testid="share-tab-webid"
-          >
-            With WebID
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "public"}
-            onClick={() => setTab("public")}
-            className={`px-4 py-1.5 text-xs ${tab === "public" ? "bg-[color:var(--accent)] text-white" : "hover:bg-[color:var(--paper-soft)]"}`}
-            data-testid="share-tab-public"
-          >
-            Public link
-          </button>
-        </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+          <TabsList>
+            <TabsTrigger value="webid" data-testid="share-tab-webid">
+              With WebID
+            </TabsTrigger>
+            <TabsTrigger value="public" data-testid="share-tab-public">
+              Public link
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="mt-4 min-h-[180px]">
-          {tab === "webid" ? (
-            <form onSubmit={onGrantWebId} className="space-y-3">
-              <label className="block">
-                <span
-                  className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]"
-                  style={{ fontFamily: "var(--font-mono-src)" }}
-                >
-                  Recipient WebID
-                </span>
-                <input
-                  type="url"
-                  value={webId}
-                  onChange={(e) => setWebId(e.target.value)}
-                  placeholder="http://localhost:3061/bob/profile/card#me"
-                  className="mt-2 w-full rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)] px-3 py-2 text-sm focus:border-[color:var(--accent)] focus:outline-none"
-                  data-testid="share-webid-input"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={busy}
-                className="rounded-md bg-[color:var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--accent-deep)] disabled:opacity-50"
-                data-testid="share-webid-grant"
-              >
-                Grant read
-              </button>
-              {grantedWebIds.length > 0 ? (
-                <ul className="mt-3 space-y-1.5">
-                  {grantedWebIds.map((w) => (
-                    <li
-                      key={w}
-                      className="flex items-center justify-between gap-3 rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] px-3 py-2 text-xs"
-                    >
-                      <span className="mono truncate">{w}</span>
-                      <button
-                        onClick={() => onRevokeWebId(w)}
-                        disabled={busy}
-                        className="rounded-md px-2 py-0.5 text-[color:var(--status-bad)] hover:bg-[color:var(--status-bad-soft)] disabled:opacity-50"
+          <div className="mt-4 min-h-[180px]">
+            <TabsContent value="webid">
+              <form onSubmit={onGrantWebId} className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    Recipient WebID
+                  </Label>
+                  <Input
+                    type="url"
+                    value={webId}
+                    onChange={(e) => setWebId(e.target.value)}
+                    placeholder="http://localhost:3061/bob/profile/card#me"
+                    data-testid="share-webid-input"
+                  />
+                </div>
+                <Button type="submit" disabled={busy} data-testid="share-webid-grant">
+                  Grant read
+                </Button>
+                {grantedWebIds.length > 0 ? (
+                  <ul className="mt-3 space-y-1.5">
+                    {grantedWebIds.map((w) => (
+                      <li
+                        key={w}
+                        className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-xs"
                       >
-                        Revoke
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm">
-                    Make this file readable by anyone with the link.
-                  </p>
-                  <p className="mt-1 text-xs text-[color:var(--ink-faint)]">
-                    Current state: {publicRead ? "public" : "private"}
-                  </p>
+                        <span className="truncate font-mono">{w}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => onRevokeWebId(w)}
+                          disabled={busy}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          Revoke
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </form>
+            </TabsContent>
+
+            <TabsContent value="public">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm">
+                      Make this file readable by anyone with the link.
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Current state: {publicRead ? "public" : "private"}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => onTogglePublic(!publicRead)}
+                    disabled={busy}
+                    variant={publicRead ? "outline" : "default"}
+                    className={
+                      publicRead
+                        ? "border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        : undefined
+                    }
+                    data-testid="share-public-toggle"
+                  >
+                    {publicRead ? "Revoke" : "Make public"}
+                  </Button>
                 </div>
-                <button
-                  onClick={() => onTogglePublic(!publicRead)}
-                  disabled={busy}
-                  className={`rounded-md px-4 py-2 text-sm font-medium ${publicRead ? "border border-[color:var(--status-bad)] text-[color:var(--status-bad)] hover:bg-[color:var(--status-bad-soft)]" : "bg-[color:var(--accent)] text-white hover:bg-[color:var(--accent-deep)]"} disabled:opacity-50`}
-                  data-testid="share-public-toggle"
-                >
-                  {publicRead ? "Revoke" : "Make public"}
-                </button>
+                {publicRead ? (
+                  <div className="rounded-md border bg-muted/40 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                      Shareable URL
+                    </p>
+                    <p
+                      className="mt-2 break-all font-mono text-xs"
+                      data-testid="share-public-url"
+                    >
+                      {resourceUrl}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onCopyLink}
+                      className="mt-2"
+                      data-testid="share-public-copy"
+                    >
+                      {copyMsg ?? "Copy"}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
-              {publicRead ? (
-                <div className="rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-3">
-                  <p
-                    className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]"
-                    style={{ fontFamily: "var(--font-mono-src)" }}
-                  >
-                    Shareable URL
-                  </p>
-                  <p
-                    className="mono mt-2 break-all text-xs"
-                    data-testid="share-public-url"
-                  >
-                    {resourceUrl}
-                  </p>
-                  <button
-                    onClick={onCopyLink}
-                    className="mt-2 rounded-md border border-[color:var(--ink-trace)] px-3 py-1 text-xs hover:border-[color:var(--accent)]"
-                    data-testid="share-public-copy"
-                  >
-                    {copyMsg ?? "Copy"}
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
+            </TabsContent>
+          </div>
+        </Tabs>
 
         {confirmation ? (
           <p
-            className="mt-4 rounded-md border border-[color:var(--accent)] bg-[color:var(--accent-soft)] px-3 py-2 text-xs text-[color:var(--accent-deep)]"
+            className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs text-primary"
             data-testid="share-confirmation"
           >
             {confirmation}
@@ -281,13 +254,13 @@ export default function ShareDialog({
         ) : null}
         {error ? (
           <p
-            className="mt-4 rounded-md border border-[color:var(--status-bad)] bg-[color:var(--status-bad-soft)] px-3 py-2 text-xs text-[color:var(--status-bad)]"
+            className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
             data-testid="share-error"
           >
             {error}
           </p>
         ) : null}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

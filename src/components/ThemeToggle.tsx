@@ -1,42 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button, useMindTheme } from "@mind-studio/ui";
+import { Moon, Sun } from "lucide-react";
 
-const KEY = "mind-drive:theme";
-
-type Theme = "light" | "dark";
-
-function currentTheme(): Theme {
-  if (typeof document === "undefined") return "dark";
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
-}
-
+/**
+ * Light/dark switch backed by the @mind-studio/ui ThemeProvider (next-themes
+ * under the hood). We gate on a mounted flag so the icon doesn't flash the
+ * wrong glyph during hydration — `resolvedMode` is only correct client-side.
+ */
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const { resolvedMode, setMode } = useMindTheme();
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setTheme(currentTheme());
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  function flip() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    document.documentElement.classList.toggle("dark", next === "dark");
-    try {
-      localStorage.setItem(KEY, next);
-    } catch {}
-    setTheme(next);
-  }
+  // Gate *everything* theme-dependent on `mounted` so the hydration render
+  // matches the server (which has no resolved theme): both produce the
+  // `isDark === false` branch. After mount we re-render with the real value.
+  // Gating only the icon (not aria-label/title) caused a hydration mismatch.
+  const isDark = mounted && resolvedMode === "dark";
 
   return (
-    <button
-      onClick={flip}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      className="px-2 py-1 text-[color:var(--ink-soft)] hover:text-[color:var(--accent)]"
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onClick={() => setMode(isDark ? "light" : "dark")}
+      aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+      title={`Switch to ${isDark ? "light" : "dark"} theme`}
       data-testid="theme-toggle"
     >
-      {theme === "dark" ? "☀" : "☾"}
-    </button>
+      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </Button>
   );
 }

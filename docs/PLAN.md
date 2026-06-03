@@ -110,7 +110,7 @@ Goal: a usable file manager. PodBrowser parity.
 ### M5 — Encryption-at-rest (the proof point) (week 5)
 
 - `src/lib/solid/crypto.ts` — AES-GCM per-file in a Web Worker.
-- Passphrase-derived KEK (Argon2id WASM); wrapped per-file keys in sidecar.
+- Passphrase-derived KEK; wrapped per-file keys in sidecar. (Shipped with **PBKDF2-SHA256** (250k iters), not Argon2id — see `src/lib/solid/crypto.ts` for the rationale.)
 - Opt-in per folder ("encrypt this folder" toggle).
 - Preview path: decrypt in browser before render.
 
@@ -138,7 +138,7 @@ Pod-to-pod sharing, trash bin sweeper, file-request links, multi-pod aggregation
 ## What "done for v0" looks like
 
 A 90-second demo video where someone:
-1. Opens `localhost:3030`, logs in as alice (Solid OIDC popup).
+1. Opens `localhost:3060`, logs in as alice (Solid OIDC popup).
 2. Sees the drive UI with seeded files + thumbnails.
 3. Drags 5 photos in — thumbnails generate live.
 4. Searches for a word that's inside a seeded PDF — finds it.

@@ -12,11 +12,14 @@ const RETURN_TO_KEY = "mind-drive:return-to";
  * The URL users should land on after the OIDC dance — set right before
  * triggering login(), read by /login/callback once the code is consumed.
  *
- * We deliberately do NOT use `restorePreviousSession: true` anywhere — CSS's
- * "silent" OIDC is in fact a full-page redirect, so calling it on every page
- * load created an infinite /login/callback ↔ /drive loop. The price we pay is
- * that a hard refresh (or deep link without an OIDC code in the URL) lands
- * users on the signed-out prompt; they click "Connect a pod" and re-auth.
+ * We deliberately do NOT use `restorePreviousSession: true` anywhere. In the
+ * @inrupt browser SDK that flag is not a token-based silent restore — it is a
+ * full-page redirect to the IdP. On CSS, calling it on every page load created
+ * an infinite /login/callback ↔ /drive loop (verified again 2026-06-01), and
+ * even in the happy path it round-trips through the IdP and discards the deep
+ * link. The price is that a hard refresh (or deep link without an OIDC code in
+ * the URL) lands on the signed-out prompt. We soften that by remembering the
+ * attempted path (see `rememberSignedOutPath`) so reconnecting returns there.
  */
 export function rememberReturnTo(url: string) {
   if (typeof window === "undefined") return;
@@ -24,6 +27,28 @@ export function rememberReturnTo(url: string) {
   try {
     sessionStorage.setItem(RETURN_TO_KEY, url);
   } catch {}
+}
+
+/**
+ * Set the post-login destination ONLY if one isn't already remembered. The
+ * signed-out view on a deep link (e.g. /drive/file/foo) records that path; the
+ * /connect form then uses this to fall back to /drive without clobbering it,
+ * so the user returns to the file they actually wanted.
+ */
+export function rememberReturnToDefault(url: string) {
+  if (typeof window === "undefined") return;
+  try {
+    if (!sessionStorage.getItem(RETURN_TO_KEY)) rememberReturnTo(url);
+  } catch {}
+}
+
+/**
+ * Called by signed-out screens on mount to capture where the user was trying
+ * to go, so a subsequent "Connect a pod" → login returns them there.
+ */
+export function rememberSignedOutPath() {
+  if (typeof window === "undefined") return;
+  rememberReturnTo(window.location.pathname + window.location.search);
 }
 
 export function consumeReturnTo(): string {

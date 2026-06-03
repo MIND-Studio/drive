@@ -3,10 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button, Input } from "@mind-studio/ui";
+import { Download, Share2, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { session } from "@/lib/solid/session";
-import { ensureSession } from "@/lib/solid/auth";
+import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
 import ShareDialog from "@/components/ShareDialog";
 import PassphraseDialog from "@/components/PassphraseDialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   decryptFile,
   getSessionPassphrase,
@@ -136,7 +139,7 @@ export default function FilePreview({
   if (state.kind === "booting") {
     return (
       <Shell>
-        <p className="text-[color:var(--ink-faint)]">Loading…</p>
+        <p className="text-muted-foreground">Loading…</p>
       </Shell>
     );
   }
@@ -173,20 +176,16 @@ export default function FilePreview({
   if (state.kind === "error") {
     return (
       <Shell>
-        <div className="rounded-md border border-[color:var(--status-bad)] bg-[color:var(--status-bad-soft)] p-5">
-          <p
-            className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--status-bad)]"
-            style={{ fontFamily: "var(--font-mono-src)" }}
-          >
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-destructive">
             File error
           </p>
-          <p className="mono mt-2 break-all text-sm">{state.message}</p>
-          <Link
-            href="/drive"
-            className="mt-4 inline-block rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)]"
-          >
-            ← Back to My Drive
-          </Link>
+          <p className="mt-2 break-all font-mono text-sm">{state.message}</p>
+          <Button asChild variant="outline" size="sm" className="mt-4">
+            <Link href="/drive">
+              <ArrowLeft className="size-4" /> Back to My Drive
+            </Link>
+          </Button>
         </div>
       </Shell>
     );
@@ -216,17 +215,16 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function SignedOut() {
+  // Remember the file the user deep-linked to, so reconnecting returns here.
+  useEffect(() => rememberSignedOutPath(), []);
   return (
-    <div className="rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-8 text-center">
-      <p className="display text-2xl" style={{ fontFamily: "var(--font-display)" }}>
+    <div className="rounded-lg border bg-card p-8 text-center">
+      <p className="text-2xl font-semibold tracking-tight">
         Connect your pod to view files.
       </p>
-      <Link
-        href="/connect"
-        className="mt-6 inline-block rounded-md bg-[color:var(--accent)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--accent-deep)]"
-      >
-        Connect a pod
-      </Link>
+      <Button asChild className="mt-6">
+        <Link href="/connect">Connect a pod</Link>
+      </Button>
     </div>
   );
 }
@@ -256,13 +254,13 @@ function Crumbs({ pathSegments }: { pathSegments: string[] }) {
         const isLast = i === crumbs.length - 1;
         return (
           <span key={c.href} className="flex items-center gap-1">
-            {i > 0 ? <span className="text-[color:var(--ink-faint)]">/</span> : null}
+            {i > 0 ? <span className="text-muted-foreground">/</span> : null}
             {isLast ? (
-              <span className="mono text-sm text-[color:var(--ink)]">{c.label}</span>
+              <span className="font-mono text-sm text-foreground">{c.label}</span>
             ) : (
               <Link
                 href={c.href}
-                className="text-[color:var(--ink-soft)] hover:text-[color:var(--accent)]"
+                className="text-muted-foreground hover:text-primary"
               >
                 {c.label}
               </Link>
@@ -290,6 +288,7 @@ function Header({
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(fileName);
   const [sharing, setSharing] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function onDownload() {
     setBusy(true);
@@ -307,8 +306,7 @@ function Header({
     }
   }
 
-  async function onDelete() {
-    if (!window.confirm(`Delete ${fileName}?`)) return;
+  async function doDelete() {
     setBusy(true);
     try {
       await unlink(state.fileUrl);
@@ -349,87 +347,84 @@ function Header({
   }
 
   return (
-    <div className="mt-4 flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--ink-trace)] pb-4">
+    <div className="mt-4 flex flex-wrap items-start justify-between gap-4 border-b pb-4">
       <div className="min-w-0 flex-1">
         {renaming ? (
           <form onSubmit={onRenameSubmit} className="flex items-center gap-2">
-            <input
+            <Input
               type="text"
               autoFocus
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="flex-1 rounded-md border border-[color:var(--accent)] bg-[color:var(--paper)] px-3 py-1.5 text-sm focus:outline-none"
+              className="h-9 flex-1"
               data-testid="file-rename-input"
             />
-            <button
-              type="submit"
-              disabled={busy}
-              className="rounded-md bg-[color:var(--accent)] px-3 py-1.5 text-sm text-white hover:bg-[color:var(--accent-deep)] disabled:opacity-50"
-            >
+            <Button type="submit" size="sm" disabled={busy}>
               Save
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              size="sm"
+              variant="outline"
               onClick={() => {
                 setRenaming(false);
                 setNewName(fileName);
               }}
-              className="rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)]"
             >
               Cancel
-            </button>
+            </Button>
           </form>
         ) : (
           <h1
-            className="display truncate text-3xl"
-            style={{ fontFamily: "var(--font-display)" }}
+            className="truncate text-3xl font-semibold tracking-tight"
             data-testid="file-name"
           >
             {isEnc ? "🔒 " : ""}{fileName}
           </h1>
         )}
-        <p
-          className="mt-1 text-xs text-[color:var(--ink-faint)]"
-          style={{ fontFamily: "var(--font-mono-src)" }}
-        >
+        <p className="mt-1 font-mono text-xs text-muted-foreground">
           {state.contentType} · {formatBytes(state.size)}
           {isEnc ? ` · encrypted, decoded in browser` : ""}
         </p>
       </div>
       {!renaming ? (
         <div className="flex gap-2">
-          <button
+          <Button
+            size="sm"
             onClick={onDownload}
             disabled={busy}
-            className="rounded-md bg-[color:var(--accent)] px-3 py-1.5 text-sm text-white hover:bg-[color:var(--accent-deep)] disabled:opacity-50"
             data-testid="file-download"
           >
-            ↓ Download
-          </button>
-          <button
+            <Download className="size-4" /> Download
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             onClick={() => setSharing(true)}
             disabled={busy}
-            className="rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)] disabled:opacity-50"
             data-testid="file-share"
           >
-            ↗ Share
-          </button>
-          <button
+            <Share2 className="size-4" /> Share
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             onClick={() => setRenaming(true)}
             disabled={busy}
-            className="rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)] disabled:opacity-50"
             data-testid="file-rename"
           >
-            ✎ Rename
-          </button>
-          <button
-            onClick={onDelete}
+            <Pencil className="size-4" /> Rename
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setConfirmOpen(true)}
             disabled={busy}
-            className="rounded-md border border-[color:var(--status-bad)] px-3 py-1.5 text-sm text-[color:var(--status-bad)] hover:bg-[color:var(--status-bad-soft)] disabled:opacity-50"
+            className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
             data-testid="file-delete"
           >
-            × Delete
-          </button>
+            <Trash2 className="size-4" /> Delete
+          </Button>
         </div>
       ) : null}
       {sharing ? (
@@ -439,6 +434,13 @@ function Header({
           onClose={() => setSharing(false)}
         />
       ) : null}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete ${fileName}?`}
+        description="This permanently deletes the file from your pod. Solid has no trash — this can't be undone."
+        onConfirm={doDelete}
+      />
     </div>
   );
 }
@@ -461,29 +463,61 @@ function PreviewBody({
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const url = URL.createObjectURL(blob);
-    setObjectUrl(url);
     let cancelled = false;
-    if (isText(contentType)) {
-      blob.text().then((t) => {
-        if (!cancelled) setTextBody(t);
-      });
+    let createdUrl: string | null = null;
+    const assign = (b: Blob) => {
+      if (cancelled) return;
+      createdUrl = URL.createObjectURL(b);
+      setObjectUrl(createdUrl);
+    };
+    if (contentType === "image/svg+xml") {
+      // Rewrite anchor targets to _blank so links open in a new tab rather
+      // than replacing the Drive app (and dropping the in-memory pod session).
+      // The blob carries the rewritten markup, not the original bytes.
+      blob.text().then((t) => assign(svgBlobForPreview(t)));
+    } else {
+      assign(blob);
+      if (isText(contentType)) {
+        blob.text().then((t) => {
+          if (!cancelled) setTextBody(t);
+        });
+      }
     }
     return () => {
       cancelled = true;
-      URL.revokeObjectURL(url);
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
   }, [blob, contentType]);
 
   if (!objectUrl) {
     return (
-      <p className="mt-6 text-sm text-[color:var(--ink-faint)]">Loading preview…</p>
+      <p className="mt-6 text-sm text-muted-foreground">Loading preview…</p>
+    );
+  }
+
+  if (contentType === "image/svg+xml") {
+    // SVG can carry clickable <a> links and hover CSS — render it in its own
+    // browsing context so those work, unlike <img> which renders SVG as an
+    // inert image. The file is arbitrary user upload, so sandbox it: no
+    // scripts (omit allow-scripts), unique origin, no top-navigation (the SVG
+    // can't replace the Drive app). Links open in a fresh, un-sandboxed tab
+    // via allow-popups + allow-popups-to-escape-sandbox; targets are rewritten
+    // to _blank in svgBlobForPreview. Only absolute hrefs work — relative ones
+    // have no base to resolve against under a blob: URL.
+    return (
+      <iframe
+        src={objectUrl}
+        title="SVG preview"
+        sandbox="allow-popups allow-popups-to-escape-sandbox"
+        className="mt-6 h-[70vh] w-full rounded-lg border bg-muted/40"
+        data-testid="preview-svg"
+      />
     );
   }
 
   if (contentType.startsWith("image/")) {
     return (
-      <div className="mt-6 flex justify-center rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-6">
+      <div className="mt-6 flex justify-center rounded-lg border bg-muted/40 p-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={objectUrl}
@@ -500,10 +534,10 @@ function PreviewBody({
       <object
         data={objectUrl}
         type="application/pdf"
-        className="mt-6 h-[70vh] w-full rounded-md border border-[color:var(--ink-trace)]"
+        className="mt-6 h-[70vh] w-full rounded-lg border"
         data-testid="preview-pdf"
       >
-        <p className="p-4 text-sm text-[color:var(--ink-soft)]">
+        <p className="p-4 text-sm text-muted-foreground">
           PDF preview unavailable. Try downloading the file.
         </p>
       </object>
@@ -515,7 +549,7 @@ function PreviewBody({
       <video
         controls
         src={objectUrl}
-        className="mt-6 max-h-[70vh] w-full rounded-md border border-[color:var(--ink-trace)]"
+        className="mt-6 max-h-[70vh] w-full rounded-lg border"
         data-testid="preview-video"
       />
     );
@@ -535,11 +569,11 @@ function PreviewBody({
   if (isText(contentType)) {
     if (textBody == null)
       return (
-        <p className="mt-6 text-sm text-[color:var(--ink-faint)]">Loading text…</p>
+        <p className="mt-6 text-sm text-muted-foreground">Loading text…</p>
       );
     return (
       <pre
-        className="mono mt-6 max-h-[70vh] overflow-auto rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-4 text-sm leading-relaxed whitespace-pre-wrap"
+        className="mt-6 max-h-[70vh] overflow-auto rounded-lg border bg-muted/40 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap"
         data-testid="preview-text"
       >
         {textBody}
@@ -548,11 +582,25 @@ function PreviewBody({
   }
 
   return (
-    <div className="mt-6 rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-6 text-sm text-[color:var(--ink-soft)]">
+    <div className="mt-6 rounded-lg border bg-muted/40 p-6 text-sm text-muted-foreground">
       <p>No inline preview for this content type.</p>
-      <p className="mt-2 text-xs text-[color:var(--ink-faint)]">{contentType}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{contentType}</p>
     </div>
   );
+}
+
+/**
+ * Prepare an SVG for the sandboxed preview: force every anchor to open in a
+ * new tab. The diagram SVGs use target="_top", which would navigate the whole
+ * Drive tab away (and drop the in-memory pod session); rewriting to _blank
+ * keeps Drive in place. Anchors with no target get one too. We do not touch
+ * hrefs — absolute links work, relative ones stay inert (no base under blob:).
+ */
+function svgBlobForPreview(svg: string): Blob {
+  const rewritten = svg
+    .replace(/\btarget\s*=\s*("|')(?:_top|_self|_parent)\1/gi, 'target="_blank"')
+    .replace(/<a\b(?![^>]*\btarget\s*=)([^>]*?)>/gi, '<a target="_blank"$1>');
+  return new Blob([rewritten], { type: "image/svg+xml" });
 }
 
 function isText(contentType: string): boolean {

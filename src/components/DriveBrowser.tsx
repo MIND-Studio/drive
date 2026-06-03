@@ -2,10 +2,29 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  Button,
+  Input,
+  Checkbox,
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@mind-studio/ui";
+import {
+  Upload,
+  FolderPlus,
+  List as ListIcon,
+  LayoutGrid,
+  Download,
+  Pencil,
+  Trash2,
+  X,
+  Folder,
+} from "lucide-react";
 import { session } from "@/lib/solid/session";
-import { ensureSession } from "@/lib/solid/auth";
+import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
 import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
 import PassphraseDialog from "@/components/PassphraseDialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   encryptFile,
   getSessionPassphrase,
@@ -203,7 +222,7 @@ export default function DriveBrowser({
   if (state.kind === "booting") {
     return (
       <Shell>
-        <p className="text-[color:var(--ink-faint)]">Loading…</p>
+        <p className="text-muted-foreground">Loading…</p>
       </Shell>
     );
   }
@@ -247,31 +266,30 @@ export default function DriveBrowser({
       ) : null}
       {uploadError ? (
         <div
-          className="mt-4 flex items-start justify-between gap-3 rounded-md border border-[color:var(--status-bad)] bg-[color:var(--status-bad-soft)] p-3"
+          className="mt-4 flex items-start justify-between gap-3 rounded-md border border-destructive/50 bg-destructive/10 p-3"
           data-testid="upload-error-banner"
         >
           <div className="min-w-0">
-            <p
-              className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--status-bad)]"
-              style={{ fontFamily: "var(--font-mono-src)" }}
-            >
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-destructive">
               Upload failed
             </p>
-            <p className="mono mt-1 break-all text-xs text-[color:var(--ink)]">
+            <p className="mt-1 break-all font-mono text-xs text-foreground">
               {uploadError}
             </p>
-            <p className="mt-2 text-[10px] text-[color:var(--ink-faint)]">
+            <p className="mt-2 text-[10px] text-muted-foreground">
               Common causes: signed-out session (re-login at /connect), the
               filename collides with an existing folder, or your pod denied the
               write.
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={() => setUploadError(null)}
-            className="rounded-md border border-[color:var(--ink-trace)] px-2 py-0.5 text-xs hover:border-[color:var(--accent)]"
+            aria-label="Dismiss"
           >
-            ×
-          </button>
+            <X className="size-4" />
+          </Button>
         </div>
       ) : null}
       <Dropzone onDrop={uploadFiles}>
@@ -325,21 +343,20 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function SignedOut() {
+  // Remember the folder the user deep-linked to, so reconnecting returns here.
+  useEffect(() => rememberSignedOutPath(), []);
   return (
-    <div className="rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-8 text-center">
-      <p className="display text-2xl" style={{ fontFamily: "var(--font-display)" }}>
+    <div className="rounded-lg border bg-card p-8 text-center">
+      <p className="text-2xl font-semibold tracking-tight">
         Connect your pod to see your drive.
       </p>
-      <p className="mt-3 text-sm text-[color:var(--ink-soft)]">
+      <p className="mt-3 text-sm text-muted-foreground">
         Mind Drive only reads files you authorize. Sign in with your WebID to
         get started.
       </p>
-      <Link
-        href="/connect"
-        className="mt-6 inline-block rounded-md bg-[color:var(--accent)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--accent-deep)]"
-      >
-        Connect a pod
-      </Link>
+      <Button asChild className="mt-6">
+        <Link href="/connect">Connect a pod</Link>
+      </Button>
     </div>
   );
 }
@@ -352,20 +369,14 @@ function ErrorPanel({
   onRetry: () => void;
 }) {
   return (
-    <div className="rounded-md border border-[color:var(--status-bad)] bg-[color:var(--status-bad-soft)] p-5">
-      <p
-        className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--status-bad)]"
-        style={{ fontFamily: "var(--font-mono-src)" }}
-      >
+    <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-5">
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-destructive">
         Pod error
       </p>
-      <p className="mono mt-2 break-all text-sm">{message}</p>
-      <button
-        onClick={onRetry}
-        className="mt-4 rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)]"
-      >
+      <p className="mt-2 break-all font-mono text-sm">{message}</p>
+      <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>
         Retry
-      </button>
+      </Button>
     </div>
   );
 }
@@ -400,18 +411,15 @@ function Crumbs({
           const isLast = i === crumbs.length - 1;
           return (
             <span key={c.href} className="flex items-center gap-1">
-              {i > 0 ? <span className="text-[color:var(--ink-faint)]">/</span> : null}
+              {i > 0 ? <span className="text-muted-foreground">/</span> : null}
               {isLast ? (
-                <span
-                  className="display text-2xl"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
+                <span className="text-2xl font-semibold tracking-tight">
                   {c.label}
                 </span>
               ) : (
                 <Link
                   href={c.href}
-                  className="text-[color:var(--ink-soft)] hover:text-[color:var(--accent)]"
+                  className="text-muted-foreground hover:text-primary"
                 >
                   {c.label}
                 </Link>
@@ -421,7 +429,7 @@ function Crumbs({
         })}
       </nav>
       <p
-        className="mono hidden text-xs text-[color:var(--ink-faint)] sm:block"
+        className="hidden font-mono text-xs text-muted-foreground sm:block"
         title={containerUrl}
       >
         {containerUrl.replace(driveRoot, "/")}
@@ -475,13 +483,13 @@ function Toolbar({
 
   return (
     <div className="mt-6 flex flex-wrap items-center gap-2">
-      <button
+      <Button
+        size="sm"
         onClick={() => fileInputRef.current?.click()}
-        className="rounded-md bg-[color:var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--accent-deep)]"
         data-testid="upload-button"
       >
-        ↑ Upload
-      </button>
+        <Upload className="size-4" /> Upload
+      </Button>
       <input
         ref={fileInputRef}
         type="file"
@@ -497,85 +505,79 @@ function Toolbar({
       />
       {creatingFolder ? (
         <form onSubmit={createFolder} className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             autoFocus
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
             placeholder="folder name"
-            className="rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)] px-3 py-1.5 text-sm focus:border-[color:var(--accent)] focus:outline-none"
+            className="h-8 w-44"
             data-testid="new-folder-input"
           />
-          <button
+          <Button
             type="submit"
+            size="sm"
             disabled={busy}
-            className="rounded-md bg-[color:var(--accent)] px-3 py-1.5 text-sm text-white hover:bg-[color:var(--accent-deep)] disabled:opacity-50"
             data-testid="new-folder-submit"
           >
             Create
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            variant="outline"
             onClick={() => {
               setCreatingFolder(false);
               setFolderName("");
             }}
-            className="rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)]"
           >
             Cancel
-          </button>
+          </Button>
         </form>
       ) : (
-        <button
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => setCreatingFolder(true)}
-          className="rounded-md border border-[color:var(--ink-trace)] px-4 py-2 text-sm hover:border-[color:var(--accent)]"
           data-testid="new-folder-button"
         >
-          + New folder
-        </button>
+          <FolderPlus className="size-4" /> New folder
+        </Button>
       )}
-      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[color:var(--ink-soft)]">
-        <input
-          type="checkbox"
+      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+        <Checkbox
           checked={encryptUploads}
-          onChange={(e) => onEncryptUploadsChange(e.target.checked)}
+          onCheckedChange={(v) => onEncryptUploadsChange(v === true)}
           data-testid="encrypt-toggle"
         />
         <span>🔒 Encrypt uploads</span>
       </label>
       <div className="ml-auto flex items-center gap-2">
-        <input
+        <Input
           type="search"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search this folder…"
-          className="rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)] px-3 py-1.5 text-sm focus:border-[color:var(--accent)] focus:outline-none"
+          className="h-8 w-48"
           data-testid="search-input"
         />
-        <div
-          className="inline-flex overflow-hidden rounded-md border border-[color:var(--ink-trace)]"
-          role="group"
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => {
+            if (v === "list" || v === "grid") onViewModeChange(v);
+          }}
+          variant="outline"
+          size="sm"
           aria-label="View mode"
         >
-          <button
-            onClick={() => onViewModeChange("list")}
-            className={`px-3 py-1.5 text-xs ${viewMode === "list" ? "bg-[color:var(--accent)] text-white" : "hover:bg-[color:var(--paper-soft)]"}`}
-            aria-pressed={viewMode === "list"}
-            title="List view"
-            data-testid="view-list"
-          >
-            ≡
-          </button>
-          <button
-            onClick={() => onViewModeChange("grid")}
-            className={`px-3 py-1.5 text-xs ${viewMode === "grid" ? "bg-[color:var(--accent)] text-white" : "hover:bg-[color:var(--paper-soft)]"}`}
-            aria-pressed={viewMode === "grid"}
-            title="Grid view"
-            data-testid="view-grid"
-          >
-            ⊞
-          </button>
-        </div>
+          <ToggleGroupItem value="list" title="List view" data-testid="view-list">
+            <ListIcon className="size-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" title="Grid view" data-testid="view-grid">
+            <LayoutGrid className="size-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
     </div>
   );
@@ -628,13 +630,10 @@ function UploadProgress({
 }) {
   return (
     <div
-      className="mt-4 rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper-soft)] p-3"
+      className="mt-4 rounded-md border bg-muted/40 p-3"
       data-testid="upload-progress"
     >
-      <p
-        className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]"
-        style={{ fontFamily: "var(--font-mono-src)" }}
-      >
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
         Uploading…
       </p>
       <ul className="mt-2 space-y-1.5">
@@ -644,11 +643,11 @@ function UploadProgress({
             <li key={p.name} className="text-sm">
               <div className="flex justify-between gap-3">
                 <span className="truncate">{p.name}</span>
-                <span className="mono text-xs text-[color:var(--ink-faint)]">{pct}%</span>
+                <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
               </div>
-              <div className="mt-1 h-1 rounded-full bg-[color:var(--paper-sunk)]">
+              <div className="mt-1 h-1 rounded-full bg-muted">
                 <div
-                  className="h-1 rounded-full bg-[color:var(--accent)] transition-all"
+                  className="h-1 rounded-full bg-primary transition-all"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -677,18 +676,18 @@ function Listing({
 }) {
   if (entries.length === 0) {
     return (
-      <div className="mt-4 rounded-md border border-dashed border-[color:var(--ink-trace)] p-10 text-center text-[color:var(--ink-soft)]">
+      <div className="mt-4 rounded-md border border-dashed p-10 text-center text-muted-foreground">
         {searchQuery ? (
           <>
             <p>No files match &quot;{searchQuery}&quot;.</p>
-            <p className="mt-2 text-xs text-[color:var(--ink-faint)]">
+            <p className="mt-2 text-xs text-muted-foreground">
               Search is filename-only inside the current folder for now.
             </p>
           </>
         ) : (
           <>
             <p>This folder is empty.</p>
-            <p className="mt-2 text-xs text-[color:var(--ink-faint)]">
+            <p className="mt-2 text-xs text-muted-foreground">
               Drop a file here, or use the Upload button above.
             </p>
           </>
@@ -716,7 +715,7 @@ function Listing({
   }
   return (
     <ul
-      className="mt-4 divide-y divide-[color:var(--ink-trace)] rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)]"
+      className="mt-4 divide-y rounded-md border bg-card"
       data-testid="drive-listing"
     >
       {entries.map((entry) => (
@@ -748,10 +747,8 @@ function Tile({
       ? "/drive/" + relPath.replace(/\/$/, "")
       : "/drive/file/" + relPath;
   const [busy, setBusy] = useState(false);
-  async function onDelete(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!window.confirm(`Delete ${entry.name}${entry.kind === "container" ? "/" : ""}?`)) return;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  async function doDelete() {
     setBusy(true);
     try {
       await rmrf(entry.url);
@@ -762,25 +759,21 @@ function Tile({
       setBusy(false);
     }
   }
+  const isContainer = entry.kind === "container";
   return (
     <li
-      className="group relative overflow-hidden rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)] hover:border-[color:var(--accent)]"
+      className="group relative overflow-hidden rounded-md border bg-card transition-colors hover:border-primary"
       data-testid={`tile-${entry.name}`}
     >
       <Link href={href} className="block">
-        <div className="flex h-32 items-center justify-center bg-[color:var(--paper-sunk)]">
+        <div className="flex h-32 items-center justify-center bg-muted">
           {entry.kind === "container" ? (
-            <span
-              className="display text-3xl text-[color:var(--ink-faint)]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              /
-            </span>
+            <Folder className="size-10 text-muted-foreground" />
           ) : isImageName(entry.name) ? (
             <ImageThumbnail url={entry.url} alt={entry.name} className="h-32 w-full" />
           ) : (
             <span
-              className="mono text-xs uppercase text-[color:var(--ink-soft)]"
+              className="font-mono text-xs uppercase text-muted-foreground"
               aria-hidden="true"
             >
               {extLabel(entry.name)}
@@ -792,23 +785,37 @@ function Tile({
             {entry.name}
             {entry.kind === "container" ? "/" : ""}
           </p>
-          <p
-            className="mono text-[10px] text-[color:var(--ink-faint)]"
-            style={{ fontFamily: "var(--font-mono-src)" }}
-          >
+          <p className="font-mono text-[10px] text-muted-foreground">
             {entry.size != null ? formatBytes(entry.size) : entry.kind === "container" ? "folder" : ""}
           </p>
         </div>
       </Link>
-      <button
-        onClick={onDelete}
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setConfirmOpen(true);
+        }}
         disabled={busy}
         title="Delete"
-        className="absolute right-1 top-1 rounded bg-[color:var(--paper)]/80 px-1.5 py-0.5 text-xs text-[color:var(--status-bad)] opacity-0 backdrop-blur transition-opacity hover:bg-[color:var(--paper)] group-hover:opacity-100 disabled:opacity-50"
+        className="absolute right-1 top-1 bg-card/80 text-destructive opacity-0 backdrop-blur transition-opacity hover:bg-card hover:text-destructive group-hover:opacity-100"
         data-testid={`tile-delete-${entry.name}`}
       >
-        ×
-      </button>
+        <Trash2 className="size-3.5" />
+      </Button>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete ${entry.name}${isContainer ? "/" : ""}?`}
+        description={
+          isContainer
+            ? "This deletes the folder and everything inside it from your pod. Solid has no trash — this can't be undone."
+            : "This permanently deletes the file from your pod. Solid has no trash — this can't be undone."
+        }
+        onConfirm={doDelete}
+      />
     </li>
   );
 }
@@ -831,10 +838,10 @@ function Row({
   const [busy, setBusy] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(entry.name);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const isContainer = entry.kind === "container";
 
-  async function onDelete() {
-    const ok = window.confirm(`Delete ${entry.name}${entry.kind === "container" ? "/" : ""}?`);
-    if (!ok) return;
+  async function doDelete() {
     setBusy(true);
     try {
       await rmrf(entry.url);
@@ -896,103 +903,124 @@ function Row({
   }
 
   return (
-    <li className="group flex items-center gap-4 px-4 py-3 hover:bg-[color:var(--paper-soft)]">
+    <li className="group flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
       <Icon kind={entry.kind} name={entry.name} />
       {renaming ? (
         <form onSubmit={onRenameSubmit} className="flex-1 flex items-center gap-2">
-          <input
+          <Input
             type="text"
             autoFocus
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="flex-1 rounded-md border border-[color:var(--accent)] bg-[color:var(--paper)] px-2 py-1 text-sm focus:outline-none"
+            className="h-8 flex-1"
             data-testid={`rename-input-${entry.name}`}
           />
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-md bg-[color:var(--accent)] px-3 py-1 text-xs text-white hover:bg-[color:var(--accent-deep)] disabled:opacity-50"
-          >
+          <Button type="submit" size="sm" disabled={busy}>
             Save
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            variant="outline"
             onClick={() => {
               setRenaming(false);
               setNewName(entry.name);
             }}
-            className="rounded-md border border-[color:var(--ink-trace)] px-3 py-1 text-xs hover:border-[color:var(--accent)]"
           >
             Cancel
-          </button>
+          </Button>
         </form>
       ) : (
         <>
           <Link
             href={href}
-            className="flex-1 truncate text-sm hover:text-[color:var(--accent)]"
+            className="flex-1 truncate text-sm hover:text-primary"
             data-testid={`entry-${entry.name}`}
           >
             {entry.name}
             {entry.kind === "container" ? "/" : ""}
           </Link>
-          <span className="mono hidden w-24 text-right text-xs text-[color:var(--ink-faint)] sm:block">
+          <span className="hidden w-24 text-right font-mono text-xs text-muted-foreground sm:block">
             {entry.size != null
               ? formatBytes(entry.size)
               : entry.kind === "container"
               ? "—"
               : ""}
           </span>
-          <span className="mono hidden w-40 text-right text-xs text-[color:var(--ink-faint)] sm:block">
+          <span className="hidden w-40 text-right font-mono text-xs text-muted-foreground sm:block">
             {entry.modified ? entry.modified.toLocaleString() : ""}
           </span>
           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             {entry.kind === "resource" ? (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 onClick={onDownload}
                 disabled={busy}
                 title="Download"
-                className="rounded-md p-1.5 text-xs hover:bg-[color:var(--paper-sunk)] disabled:opacity-50"
                 data-testid={`download-${entry.name}`}
               >
-                ↓
-              </button>
+                <Download className="size-4" />
+              </Button>
             ) : null}
             {entry.kind === "resource" ? (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => setRenaming(true)}
                 disabled={busy}
                 title="Rename"
-                className="rounded-md p-1.5 text-xs hover:bg-[color:var(--paper-sunk)] disabled:opacity-50"
                 data-testid={`rename-${entry.name}`}
               >
-                ✎
-              </button>
+                <Pencil className="size-4" />
+              </Button>
             ) : null}
-            <button
-              onClick={onDelete}
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setConfirmOpen(true)}
               disabled={busy}
               title="Delete"
-              className="rounded-md p-1.5 text-xs text-[color:var(--status-bad)] hover:bg-[color:var(--paper-sunk)] disabled:opacity-50"
+              className="text-destructive hover:text-destructive"
               data-testid={`delete-${entry.name}`}
             >
-              ×
-            </button>
+              <Trash2 className="size-4" />
+            </Button>
           </div>
         </>
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete ${entry.name}${isContainer ? "/" : ""}?`}
+        description={
+          isContainer
+            ? "This deletes the folder and everything inside it from your pod. Solid has no trash — this can't be undone."
+            : "This permanently deletes the file from your pod. Solid has no trash — this can't be undone."
+        }
+        onConfirm={doDelete}
+      />
     </li>
   );
 }
 
 function Icon({ kind, name }: { kind: "container" | "resource"; name: string }) {
-  const label = kind === "container" ? "folder" : extLabel(name);
+  if (kind === "container") {
+    return (
+      <span
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground"
+        aria-hidden="true"
+      >
+        <Folder className="size-4" />
+      </span>
+    );
+  }
   return (
     <span
-      className="mono inline-flex h-9 w-9 items-center justify-center rounded-md bg-[color:var(--paper-sunk)] text-[10px] uppercase text-[color:var(--ink-soft)]"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-muted font-mono text-[10px] uppercase text-muted-foreground"
       aria-hidden="true"
     >
-      {label}
+      {extLabel(name)}
     </span>
   );
 }

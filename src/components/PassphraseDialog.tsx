@@ -1,6 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Button,
+  Input,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@mind-studio/ui";
 
 export default function PassphraseDialog({
   title,
@@ -33,31 +43,17 @@ export default function PassphraseDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
-      data-testid="passphrase-dialog"
-    >
-      <div className="w-full max-w-md rounded-lg border border-[color:var(--ink-trace)] bg-[color:var(--paper)] p-6 shadow-xl">
-        <p
-          className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink-faint)]"
-          style={{ fontFamily: "var(--font-mono-src)" }}
-        >
-          Encryption
-        </p>
-        <h2
-          className="display mt-1 text-xl"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {title}
-        </h2>
-        <p className="mt-3 text-sm text-[color:var(--ink-soft)]">{prompt}</p>
-        <form onSubmit={submit} className="mt-5 space-y-3">
-          <input
+    <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <DialogContent className="sm:max-w-md" data-testid="passphrase-dialog">
+        <DialogHeader>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            Encryption
+          </p>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{prompt}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <Input
             type="password"
             autoFocus
             value={p1}
@@ -66,11 +62,10 @@ export default function PassphraseDialog({
               setMismatch(false);
             }}
             placeholder="Passphrase"
-            className="w-full rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)] px-3 py-2 text-sm focus:border-[color:var(--accent)] focus:outline-none"
             data-testid="passphrase-input"
           />
           {confirmRequired ? (
-            <input
+            <Input
               type="password"
               value={p2}
               onChange={(e) => {
@@ -78,47 +73,39 @@ export default function PassphraseDialog({
                 setMismatch(false);
               }}
               placeholder="Confirm passphrase"
-              className="w-full rounded-md border border-[color:var(--ink-trace)] bg-[color:var(--paper)] px-3 py-2 text-sm focus:border-[color:var(--accent)] focus:outline-none"
               data-testid="passphrase-confirm"
             />
           ) : null}
           {mismatch ? (
-            <p className="text-xs text-[color:var(--status-bad)]">
+            <p className="text-xs text-destructive">
               Passphrases do not match.
             </p>
           ) : null}
           {error ? (
             <p
-              className="rounded-md border border-[color:var(--status-bad)] bg-[color:var(--status-bad-soft)] px-3 py-2 text-xs text-[color:var(--status-bad)]"
+              className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
               data-testid="passphrase-error"
             >
               {error}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md border border-[color:var(--ink-trace)] px-3 py-1.5 text-sm hover:border-[color:var(--accent)]"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-md bg-[color:var(--accent)] px-4 py-1.5 text-sm font-medium text-white hover:bg-[color:var(--accent-deep)]"
-              data-testid="passphrase-submit"
-            >
+            </Button>
+            <Button type="submit" data-testid="passphrase-submit">
               Continue
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
         {confirmRequired ? (
-          <p className="mt-4 rounded-md border border-[color:var(--status-warn)] bg-[color:var(--paper-soft)] p-3 text-xs text-[color:var(--ink-soft)]">
-            <strong>Heads up:</strong> there is no recovery. If you lose this
-            passphrase, the encrypted files are unrecoverable.
+          <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-muted-foreground">
+            <strong className="text-foreground">Heads up:</strong> there is no
+            recovery. If you lose this passphrase, the encrypted files are
+            unrecoverable.
           </p>
         ) : null}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
