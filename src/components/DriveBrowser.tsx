@@ -20,8 +20,13 @@ import {
   X,
   Folder,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { session } from "@/lib/solid/session";
-import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
+import {
+  ensureSession,
+  rememberSignedOutPath,
+  isEmbedded,
+} from "@/lib/solid/auth";
 import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -343,8 +348,26 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function SignedOut() {
+  const router = useRouter();
   // Remember the folder the user deep-linked to, so reconnecting returns here.
-  useEffect(() => rememberSignedOutPath(), []);
+  // When hosted inside the Mind shell (embedded), skip this manual prompt and
+  // go straight to /connect, which auto-starts the silent SSO sign-in — so
+  // opening Drive in the shell lands on your files with no "connect" click.
+  // (SignedOut only renders client-side, after the async session check, so
+  // isEmbedded() is reliable here and there's no SSR/hydration mismatch.)
+  useEffect(() => {
+    rememberSignedOutPath();
+    if (isEmbedded()) router.replace("/connect");
+  }, [router]);
+
+  if (isEmbedded()) {
+    return (
+      <div className="rounded-lg border bg-card p-8 text-center">
+        <p className="text-sm text-muted-foreground">Connecting…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border bg-card p-8 text-center">
       <p className="text-2xl font-semibold tracking-tight">
