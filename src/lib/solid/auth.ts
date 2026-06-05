@@ -61,6 +61,45 @@ export function consumeReturnTo(): string {
   return "/drive";
 }
 
+const EMBED_AUTOLOGIN_KEY = "mind-drive:embed-autologin";
+
+/**
+ * True when Drive is running inside another origin's frame (e.g. the Mind
+ * shell's app body). A cross-origin parent makes `window.top` access throw,
+ * which is itself proof we're framed.
+ */
+export function isEmbedded(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * One-shot gate for embedded silent sign-in. When Drive is hosted in the shell
+ * the user has already authenticated at the shared IdP (pod.mindpods.org), so
+ * we auto-start the OIDC redirect instead of waiting on a "Continue" click —
+ * SSO makes the round-trip silent (no password prompt).
+ *
+ * We deliberately DON'T use the @inrupt `restorePreviousSession` silent path:
+ * it loops `/login/callback ↔ /drive` here (see the note above). Instead this
+ * fires the same redirect the button does, but at most ONCE per tab session —
+ * the sessionStorage guard means a bounce-back to /connect (SSO expired, or
+ * consent declined) falls through to the manual login card instead of looping.
+ */
+export function shouldAutoLoginEmbedded(): boolean {
+  if (!isEmbedded()) return false;
+  try {
+    if (sessionStorage.getItem(EMBED_AUTOLOGIN_KEY)) return false;
+    sessionStorage.setItem(EMBED_AUTOLOGIN_KEY, "1");
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Single-flight wrapper around `handleIncomingRedirect`. The OIDC authorization
  * code is one-time-use: redeeming it twice makes the token endpoint return
