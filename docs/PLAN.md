@@ -123,7 +123,7 @@ Pod-to-pod sharing, trash bin sweeper, file-request links, multi-pod aggregation
 ## Open decisions (resolve before M1)
 
 - **Demo persona names** — `alice`, `bob` (matches social-v0 / market-v0 convention) or something more drive-flavored? *Recommend: alice, bob.*
-- **CSS config preset** — default WAC, or swap to ACP for forward-compat? *Recommend: WAC; matches CSS v7 default and `mind-codespaces-v0`.*
+- **CSS config preset** — default WAC, or swap to ACP for forward-compat? *Recommend: WAC; matches CSS v7 default and `codespaces`.*
 - **Index storage in browser** — IndexedDB (compatible everywhere) or OPFS (faster, Chromium-first)? *Recommend: OPFS with IndexedDB fallback.*
 - **Authenticated fetch in Web Workers** — `solid-client-authn-browser` doesn't expose a fetch in workers directly; we need to either pass DPoP tokens in or proxy through the main thread. *Investigate during M2.*
 - **Are we adding a second pod for sharing demos in M4** — yes / no. Affects docker-compose now or later. *Recommend: defer until M4, add second CSS service then on port 3062.*

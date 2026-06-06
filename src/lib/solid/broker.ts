@@ -6,7 +6,7 @@ import { podRootFromWebId } from "@/lib/config";
 /**
  * Brokered identity + pod I/O for when Mind Drive runs *inside* the Mind shell.
  *
- * The shell (mind-shell-v0) hosts Drive in a sandboxed iframe and exposes a
+ * The shell hosts Drive in a sandboxed iframe and exposes a
  * versioned postMessage "capability bridge" (PRD-APPS §5): it hands the child
  * the signed-in identity (webId + workspace pod root) and performs every pod
  * request on the child's behalf with ITS authed fetch — scope-checked to the
