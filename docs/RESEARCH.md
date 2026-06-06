@@ -1,4 +1,4 @@
-# Research notes — mind-drive-v0
+# Research notes — drive
 
 Compiled from four parallel research passes on 2026-05-26. The takeaways below are the surprising / load-bearing constraints; the source agents have more depth and citations.
 
@@ -95,7 +95,7 @@ Discovery flow:
 ### Repo skeleton — match this exactly
 
 ```
-mind-drive-v0/
+drive/
 ├── AGENTS.md
 ├── README.md
 ├── CLAUDE.md         (one-liner: @AGENTS.md)
@@ -142,7 +142,7 @@ Expect 8–12 files in `src/lib/solid/`:
 | agents-v0       | 3041     | — |
 | codespaces-ide-v0 | 3041   | — *(known collision with agents-v0)* |
 | social-v0       | 3050     | 3051, 3052 |
-| **drive-v0**    | **3060** | **3061** (and 3062 if multi-pod) |
+| **drive**       | **3060** | **3061** (and 3062 if multi-pod) |
 
 ### Seed script
 

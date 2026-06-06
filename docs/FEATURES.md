@@ -1,4 +1,4 @@
-# Features — mind-drive-v0
+# Features — drive
 
 Scope decisions for a single-developer privacy-first gdrive/dropbox prototype.
 
@@ -67,7 +67,7 @@ Explicit non-goals for v0.
 
 ## Comparison
 
-|                       | Google Drive                          | Dropbox                               | mind-drive-v0                                  |
+|                       | Google Drive                          | Dropbox                               | drive                                          |
 |-----------------------|---------------------------------------|---------------------------------------|------------------------------------------------|
 | **Storage location**  | Google datacenters                    | Dropbox datacenters                   | User's chosen Solid pod                        |
 | **Encryption**        | In transit + at rest, provider keys   | In transit + at rest, provider keys   | Client-side AES-GCM; pod stores ciphertext     |
@@ -76,4 +76,4 @@ Explicit non-goals for v0.
 | **Search**            | Full-text + OCR + AI (server-side)    | Full-text + OCR (server-side)         | Client-side FTS over filenames + text          |
 | **Offline access**    | Mature desktop + mobile sync          | Mature desktop + mobile sync          | Browser session only in v0                     |
 
-**The honest tradeoff:** Drive and Dropbox win on offline/sync UX and on search depth — decades of engineering. mind-drive-v0 wins on data sovereignty, encryption posture, and portability. The bet is that for a meaningful slice of users, *"nobody but me can read my files, and I can walk away tomorrow"* beats *"OCR finds the receipt from 2019."*
+**The honest tradeoff:** Drive and Dropbox win on offline/sync UX and on search depth — decades of engineering. drive wins on data sovereignty, encryption posture, and portability. The bet is that for a meaningful slice of users, *"nobody but me can read my files, and I can walk away tomorrow"* beats *"OCR finds the receipt from 2019."*

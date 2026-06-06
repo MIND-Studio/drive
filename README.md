@@ -1,4 +1,4 @@
-# mind-drive-v0
+# drive
 
 A privacy-first Google Drive / Dropbox clone built on [Solid Pods](https://solidproject.org).
 
@@ -15,7 +15,7 @@ a GitHub token with `read:packages` (`export NODE_AUTH_TOKEN=<PAT>`).
 ## Quickstart
 
 ```bash
-cd mind-drive-v0
+cd drive
 docker compose up -d            # CSS on :3061
 npm install
 npm run seed:demo               # populate alice + bob pods
@@ -41,7 +41,7 @@ npm run dev                     # Next.js on :3060
 
 ## What this is
 
-Sibling prototype to `mind-market-v0`, `mind-codespaces-v0`, `mind-os-v0`, and `mind-social-network-v0`. Same stack, different problem space. The bet: a meaningful slice of users will trade away gdrive/dropbox's OCR-quality search and decade-old sync clients in exchange for *nobody but me can read my files, and I can walk away tomorrow*.
+Sibling prototype to [`codespaces`](https://github.com/MIND-Studio/codespaces). Same stack, different problem space. The bet: a meaningful slice of users will trade away gdrive/dropbox's OCR-quality search and decade-old sync clients in exchange for *nobody but me can read my files, and I can walk away tomorrow*.
 
 ## Ports (planned)
 
@@ -59,5 +59,4 @@ Sibling prototype to `mind-market-v0`, `mind-codespaces-v0`, `mind-os-v0`, and `
 
 ## Read before editing
 
-- The parent `/Users/heussers/develop/mind/mind-prototypes/CLAUDE.md` for cross-prototype rules.
 - `AGENTS.md` in this directory for prototype-specific constraints (once code lands).

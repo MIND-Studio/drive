@@ -1,12 +1,10 @@
-# AGENTS.md — mind-drive-v0
+# AGENTS.md — drive
 
 Orientation rules for agents working in this prototype. **Read this before editing any file here.**
 
 ## Orientation
 
-This is a privacy-first gdrive/dropbox clone built on Solid Pods. It is a **sibling** of `mind-market-v0`, `mind-codespaces-v0`, `mind-os-v0`, and `mind-social-network-v0` — independent app, own ports, own data, own docs. Do not unify with sibling prototypes.
-
-The grandparent `/Users/heussers/develop/mind/CLAUDE.md` describes Mind Cube (a Raspberry Pi AI assistant). It is **not** relevant to anything here.
+This is a privacy-first gdrive/dropbox clone built on Solid Pods. It is a **sibling** of [`codespaces`](https://github.com/MIND-Studio/codespaces) — independent app, own ports, own data, own docs. Do not unify with sibling prototypes.
 
 ## NOT the Next.js you know
 

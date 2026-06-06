@@ -1,4 +1,4 @@
-# Plan — mind-drive-v0
+# Plan — drive
 
 Synthesis of [`RESEARCH.md`](RESEARCH.md) and [`FEATURES.md`](FEATURES.md) into an implementation roadmap.
 
@@ -114,7 +114,7 @@ Goal: a usable file manager. PodBrowser parity.
 - Opt-in per folder ("encrypt this folder" toggle).
 - Preview path: decrypt in browser before render.
 
-**Exit criteria:** view raw pod contents in PodBrowser/curl → ciphertext. View in mind-drive with passphrase → plaintext. Lose the passphrase → unrecoverable (and the UI says so up front).
+**Exit criteria:** view raw pod contents in PodBrowser/curl → ciphertext. View in drive with passphrase → plaintext. Lose the passphrase → unrecoverable (and the UI says so up front).
 
 ### Stretch / v0.2
 
