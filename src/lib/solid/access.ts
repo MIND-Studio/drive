@@ -1,7 +1,7 @@
 "use client";
 
 import { universalAccess } from "@inrupt/solid-client";
-import { session } from "./session";
+import { podFetch } from "./pod-fs";
 
 /**
  * Thin wrappers around @inrupt/solid-client's `universalAccess`. We use the
@@ -27,8 +27,12 @@ export type AccessFlags = {
   controlWrite?: boolean;
 };
 
+// Brokered-aware: inside the Mind shell this is the shell's scope-checked broker
+// fetch (so WAC writes on `.acl` go through the shell); standalone it's the OIDC
+// session fetch. `.acl` resources live under the pod root, so they pass the
+// broker's scope check.
 function authedFetch(): typeof fetch {
-  return session().fetch as typeof fetch;
+  return podFetch();
 }
 
 export async function getAgentAccess(

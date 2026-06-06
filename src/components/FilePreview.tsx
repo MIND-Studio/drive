@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Input } from "@mind-studio/ui";
 import { Download, Share2, Pencil, Trash2, ArrowLeft } from "lucide-react";
-import { session } from "@/lib/solid/session";
 import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
+import { currentIdentity } from "@/lib/solid/broker";
 import ShareDialog from "@/components/ShareDialog";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -19,7 +19,7 @@ import {
   sidecarUrlFor,
   type EncryptedSidecar,
 } from "@/lib/solid/crypto";
-import { driveRootFor, podRootFromWebId, normalizeSegment } from "@/lib/config";
+import { driveRootFor, normalizeSegment } from "@/lib/config";
 import {
   readFileBlob,
   unlink,
@@ -52,13 +52,14 @@ export default function FilePreview({
   const [state, setState] = useState<State>({ kind: "booting" });
 
   const load = useCallback(async () => {
-    const s = session();
-    if (!s.info.isLoggedIn || !s.info.webId) {
+    // Identity is brokered-first: inside the Mind shell it's the shell's webId +
+    // workspace pod root (no local session); standalone it's the OIDC session.
+    const id = currentIdentity();
+    if (!id) {
       setState({ kind: "signed-out" });
       return;
     }
-    const podRoot = podRootFromWebId(s.info.webId);
-    const driveRoot = driveRootFor(podRoot);
+    const driveRoot = driveRootFor(id.podRoot);
     const fileUrl =
       driveRoot + pathSegments.map(normalizeSegment).join("/");
     const leaf = safeDecode(pathSegments[pathSegments.length - 1] ?? "");
@@ -76,7 +77,7 @@ export default function FilePreview({
             ciphertext: blob,
             fileUrl,
             driveRoot,
-            webId: s.info.webId,
+            webId: id.webId,
           });
           return;
         }
@@ -84,7 +85,7 @@ export default function FilePreview({
           const plaintext = await decryptFile(passphrase, blob, sidecar);
           setState({
             kind: "ready",
-            webId: s.info.webId,
+            webId: id.webId,
             driveRoot,
             fileUrl,
             blob: plaintext,
@@ -99,7 +100,7 @@ export default function FilePreview({
             ciphertext: blob,
             fileUrl,
             driveRoot,
-            webId: s.info.webId,
+            webId: id.webId,
             error: String(e),
           });
         }
@@ -108,7 +109,7 @@ export default function FilePreview({
       const contentType = blob.type || guessContentType(leaf);
       setState({
         kind: "ready",
-        webId: s.info.webId,
+        webId: id.webId,
         driveRoot,
         fileUrl,
         blob,
