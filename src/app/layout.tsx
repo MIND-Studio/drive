@@ -5,6 +5,7 @@ import { mind } from "@mind-studio/ui/themes";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { LauncherButton } from "@/components/LauncherButton";
+import { StandaloneOnly } from "@/components/StandaloneOnly";
 
 export const metadata: Metadata = {
   title: "Mind Drive — your files in your pod",
@@ -24,9 +25,13 @@ export default function RootLayout({
           enableSystem={false}
           storageKey="mind-drive-theme"
         >
-          <Masthead />
+          <StandaloneOnly>
+            <Masthead />
+          </StandaloneOnly>
           <main className="flex-1">{children}</main>
-          <Colophon />
+          <StandaloneOnly>
+            <Colophon />
+          </StandaloneOnly>
         </ThemeProvider>
       </body>
     </html>
