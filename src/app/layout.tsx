@@ -6,6 +6,7 @@ import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { LauncherButton } from "@/components/LauncherButton";
 import { StandaloneOnly } from "@/components/StandaloneOnly";
+import { BrokerThemeSync } from "@/components/BrokerThemeSync";
 
 export const metadata: Metadata = {
   title: "Mind Drive — your files in your pod",
@@ -25,6 +26,7 @@ export default function RootLayout({
           enableSystem={false}
           storageKey="mind-drive-theme"
         >
+          <BrokerThemeSync />
           <StandaloneOnly>
             <Masthead />
           </StandaloneOnly>

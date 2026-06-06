@@ -41,7 +41,14 @@ export interface BrokerIdentity {
   podRoot: string;
 }
 
+/** The shell's color mode, handed over the bridge so Drive's chrome matches it. */
+export type BrokerTheme = "light" | "dark";
+
 let brokered: BrokerIdentity | null = null;
+/** The shell's current color mode (null until the welcome carries one). */
+let brokeredTheme: BrokerTheme | null = null;
+/** Subscribers notified whenever the brokered theme arrives or changes. */
+const themeListeners = new Set<() => void>();
 /** Origin of the hosting shell, learned from the welcome — posts pin to it. */
 let parentOrigin = "*";
 let reqCounter = 0;
@@ -75,6 +82,17 @@ export function isBrokered(): boolean {
 
 export function brokeredIdentity(): BrokerIdentity | null {
   return brokered;
+}
+
+/** The shell's color mode when embedded, or null (standalone / not yet known). */
+export function currentBrokeredTheme(): BrokerTheme | null {
+  return brokeredTheme;
+}
+
+/** Subscribe to brokered-theme changes; returns an unsubscribe. */
+export function subscribeBrokeredTheme(fn: () => void): () => void {
+  themeListeners.add(fn);
+  return () => themeListeners.delete(fn);
 }
 
 /**
@@ -170,6 +188,7 @@ interface BridgeData {
   v?: number;
   id?: string;
   identity?: { webId?: string; workspacePod?: string };
+  theme?: string;
   status?: number;
   url?: string;
   headers?: Record<string, string>;
@@ -191,6 +210,12 @@ function onMessage(ev: MessageEvent) {
     if (id?.webId && id?.workspacePod) {
       brokered = { webId: id.webId, podRoot: ensureSlash(id.workspacePod) };
       finishHandshake?.(brokered);
+    }
+    // The shell re-broadcasts welcome on every theme toggle, so handle theme on
+    // each welcome (not just the first) and notify subscribers on change.
+    if ((data.theme === "light" || data.theme === "dark") && data.theme !== brokeredTheme) {
+      brokeredTheme = data.theme;
+      themeListeners.forEach((fn) => fn());
     }
     return;
   }
