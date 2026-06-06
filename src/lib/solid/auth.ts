@@ -5,6 +5,7 @@ import {
   type ISessionInfo,
 } from "@inrupt/solid-client-authn-browser";
 import { session } from "./session";
+import { initBroker } from "./broker";
 
 const RETURN_TO_KEY = "mind-drive:return-to";
 
@@ -137,6 +138,21 @@ function handleRedirectOnce(): Promise<void> {
 export async function ensureSession(): Promise<ISessionInfo> {
   const s = session();
   if (s.info.isLoggedIn) return s.info;
+  // Inside the Mind shell, take identity over the capability bridge instead of
+  // running our own OIDC — the shell brokers all pod I/O (see broker.ts), so no
+  // credential crosses and the app's own sign-in screen is skipped entirely.
+  // Falls through to the normal redirect flow if no shell answers (foreign
+  // embed / standalone), keeping Drive unchanged outside the shell.
+  if (isEmbedded()) {
+    const brokered = await initBroker();
+    if (brokered) {
+      return {
+        isLoggedIn: true,
+        webId: brokered.webId,
+        sessionId: "mind-shell-brokered",
+      } as ISessionInfo;
+    }
+  }
   await handleRedirectOnce();
   return session().info;
 }

@@ -15,6 +15,7 @@ import {
   getContentType,
 } from "@inrupt/solid-client";
 import { session } from "./session";
+import { isBrokered, brokerFetch } from "./broker";
 
 /**
  * POSIX-shaped wrappers around the Solid LDP HTTP API, ported from
@@ -38,8 +39,18 @@ export type PodEntry = {
   contentType?: string;
 };
 
+/**
+ * The fetch every pod call runs through. When Drive is hosted in the Mind shell
+ * (brokered mode) this is the shell's scope-checked broker fetch — Drive holds
+ * no session of its own; otherwise it's the local OIDC session's authed fetch.
+ */
 function authedFetch(): typeof fetch {
-  return session().fetch as typeof fetch;
+  return isBrokered() ? brokerFetch : (session().fetch as typeof fetch);
+}
+
+/** Public accessor for the active authed fetch (brokered or local). */
+export function podFetch(): typeof fetch {
+  return authedFetch();
 }
 
 function ensureSlash(u: string) {
@@ -58,7 +69,7 @@ function basename(url: string, parent: string): string {
  * readdir() right after mkdir/upload/delete will see stale listings.
  */
 function noCacheFetch(): typeof fetch {
-  const inner = session().fetch as typeof fetch;
+  const inner = authedFetch();
   return ((url: RequestInfo | URL, init?: RequestInit) =>
     inner(url, { ...init, cache: "no-store" })) as typeof fetch;
 }

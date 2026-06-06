@@ -21,12 +21,12 @@ import {
   Folder,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { session } from "@/lib/solid/session";
 import {
   ensureSession,
   rememberSignedOutPath,
   isEmbedded,
 } from "@/lib/solid/auth";
+import { currentIdentity, isBrokered, signalReady } from "@/lib/solid/broker";
 import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -43,10 +43,11 @@ import {
   rmrf,
   rename,
   writeFileBlob,
+  podFetch,
   guessContentType,
   type PodEntry,
 } from "@/lib/solid/pod-fs";
-import { driveRootFor, podRootFromWebId, normalizeSegment } from "@/lib/config";
+import { driveRootFor, normalizeSegment } from "@/lib/config";
 
 type State =
   | { kind: "booting" }
@@ -107,13 +108,14 @@ export default function DriveBrowser({
   }, []);
 
   const refresh = useCallback(async () => {
-    const s = session();
-    if (!s.info.isLoggedIn || !s.info.webId) {
+    // Identity is brokered-first: inside the Mind shell it's the shell's webId
+    // + workspace pod root (no local session); standalone it's the OIDC session.
+    const id = currentIdentity();
+    if (!id) {
       setState({ kind: "signed-out" });
       return;
     }
-    const podRoot = podRootFromWebId(s.info.webId);
-    const driveRoot = driveRootFor(podRoot);
+    const driveRoot = driveRootFor(id.podRoot);
     const containerUrl =
       pathSegments.length === 0
         ? driveRoot
@@ -122,7 +124,7 @@ export default function DriveBrowser({
       const entries = await readdir(containerUrl);
       setState({
         kind: "ready",
-        webId: s.info.webId,
+        webId: id.webId,
         driveRoot,
         containerUrl,
         entries,
@@ -134,7 +136,7 @@ export default function DriveBrowser({
           const entries = await readdir(containerUrl);
           setState({
             kind: "ready",
-            webId: s.info.webId,
+            webId: id.webId,
             driveRoot,
             containerUrl,
             entries,
@@ -159,6 +161,9 @@ export default function DriveBrowser({
       }
       if (cancelled) return;
       await refresh();
+      // Tell the shell we've rendered so it drops its loading overlay (no-op
+      // when standalone).
+      if (!cancelled && isBrokered()) signalReady();
     })();
     return () => {
       cancelled = true;
@@ -879,8 +884,7 @@ function Row({
   async function onDownload() {
     setBusy(true);
     try {
-      const s = session();
-      const res = await s.fetch(entry.url);
+      const res = await podFetch()(entry.url);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

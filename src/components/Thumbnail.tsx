@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { session } from "@/lib/solid/session";
+import { podFetch } from "@/lib/solid/pod-fs";
 
 /**
  * Inline thumbnail for an image file in the user's pod. Fetches with the
@@ -27,7 +27,7 @@ export function ImageThumbnail({
     let objectUrl: string | null = null;
     (async () => {
       try {
-        const res = await session().fetch(url);
+        const res = await podFetch()(url);
         if (!res.ok) throw new Error(String(res.status));
         const blob = await res.blob();
         if (cancelled) return;
