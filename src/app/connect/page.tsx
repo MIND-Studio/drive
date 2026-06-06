@@ -2,12 +2,12 @@ import ConnectForm from "@/components/ConnectForm";
 
 // The dev-shortcut panel describes the LOCAL CSS instance's seeded accounts.
 // Only show it when this build targets a local issuer — otherwise it leaks
-// dev credentials onto the production pod (pod.mindpods.org). Mirrors the
+// dev credentials onto the production pod (pods.mindpods.org). Mirrors the
 // DEFAULT_ISSUER resolution in src/lib/solid/session.ts (build-time inlined).
 const ISSUER =
   process.env.NEXT_PUBLIC_SOLID_ISSUER ??
   process.env.NEXT_PUBLIC_POD_BASE_URL ??
-  "https://pod.mindpods.org/";
+  "https://pods.mindpods.org/";
 const IS_LOCAL_ISSUER =
   ISSUER.includes("localhost") || ISSUER.includes("127.0.0.1");
 // Show the actual issuer host the build targets, not a hardcoded port — the

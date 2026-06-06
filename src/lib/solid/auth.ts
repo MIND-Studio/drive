@@ -80,7 +80,7 @@ export function isEmbedded(): boolean {
 
 /**
  * One-shot gate for embedded silent sign-in. When Drive is hosted in the shell
- * the user has already authenticated at the shared IdP (pod.mindpods.org), so
+ * the user has already authenticated at the shared IdP (pods.mindpods.org), so
  * we auto-start the OIDC redirect instead of waiting on a "Continue" click —
  * SSO makes the round-trip silent (no password prompt).
  *
