@@ -40,6 +40,10 @@ ENV NEXT_PUBLIC_APP_DOCK_URL=$NEXT_PUBLIC_APP_DOCK_URL \
     NEXT_PUBLIC_APP_BUILDER_URL=$NEXT_PUBLIC_APP_BUILDER_URL \
     NEXT_PUBLIC_APP_CODESPACES_URL=$NEXT_PUBLIC_APP_CODESPACES_URL
 
+# App-owned feedback inbox (public-append container). Inlined at build time.
+ARG NEXT_PUBLIC_FEEDBACK_INBOX
+ENV NEXT_PUBLIC_FEEDBACK_INBOX=$NEXT_PUBLIC_FEEDBACK_INBOX
+
 RUN npm run build
 
 # --- Stage 2: runtime ------------------------------------------------------

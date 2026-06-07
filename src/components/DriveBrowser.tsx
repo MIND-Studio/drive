@@ -35,6 +35,7 @@ import {
   getSessionPassphrase,
   setSessionPassphrase,
   isEncryptedName,
+  originalNameFromEnc,
   sidecarUrlFor,
 } from "@/lib/solid/crypto";
 import {
@@ -780,6 +781,11 @@ function Tile({
     setBusy(true);
     try {
       await rmrf(entry.url);
+      // Encrypted files carry a sibling `.enc.json` sidecar (hidden from the
+      // listing). Remove it too so deleting doesn't orphan it on the pod.
+      if (isEncryptedName(entry.name)) {
+        await rmrf(sidecarUrlFor(entry.url)).catch(() => {});
+      }
       onChanged();
     } catch (err) {
       alert(`Delete failed: ${String(err)}`);
@@ -810,7 +816,7 @@ function Tile({
         </div>
         <div className="p-2">
           <p className="truncate text-sm">
-            {entry.name}
+            {displayName(entry.name)}
             {entry.kind === "container" ? "/" : ""}
           </p>
           <p className="font-mono text-[10px] text-muted-foreground">
@@ -828,7 +834,7 @@ function Tile({
         }}
         disabled={busy}
         title="Delete"
-        className="absolute right-1 top-1 bg-card/80 text-destructive opacity-0 backdrop-blur transition-opacity hover:bg-card hover:text-destructive group-hover:opacity-100"
+        className="absolute right-1 top-1 bg-card/80 text-destructive opacity-100 backdrop-blur transition-opacity hover:bg-card hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100"
         data-testid={`tile-delete-${entry.name}`}
       >
         <Trash2 className="size-3.5" />
@@ -873,6 +879,11 @@ function Row({
     setBusy(true);
     try {
       await rmrf(entry.url);
+      // Encrypted files carry a sibling `.enc.json` sidecar (hidden from the
+      // listing). Remove it too so deleting doesn't orphan it on the pod.
+      if (isEncryptedName(entry.name)) {
+        await rmrf(sidecarUrlFor(entry.url)).catch(() => {});
+      }
       onChanged();
     } catch (err) {
       alert(`Delete failed: ${String(err)}`);
@@ -964,7 +975,7 @@ function Row({
             className="flex-1 truncate text-sm hover:text-primary"
             data-testid={`entry-${entry.name}`}
           >
-            {entry.name}
+            {displayName(entry.name)}
             {entry.kind === "container" ? "/" : ""}
           </Link>
           <span className="hidden w-24 text-right font-mono text-xs text-muted-foreground sm:block">
@@ -977,7 +988,7 @@ function Row({
           <span className="hidden w-40 text-right font-mono text-xs text-muted-foreground sm:block">
             {entry.modified ? entry.modified.toLocaleString() : ""}
           </span>
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
             {entry.kind === "resource" ? (
               <Button
                 variant="ghost"
@@ -1052,10 +1063,18 @@ function Icon({ kind, name }: { kind: "container" | "resource"; name: string }) 
   );
 }
 
+// Encrypted files are stored as `<name>.enc` on the pod, but that suffix is an
+// implementation detail (same reasoning as hiding the `.enc.json` sidecars).
+// Present them with their original name + a lock, matching the file viewer.
+function displayName(name: string): string {
+  return isEncryptedName(name) ? `🔒 ${originalNameFromEnc(name)}` : name;
+}
+
 function extLabel(name: string): string {
-  const dot = name.lastIndexOf(".");
+  const base = isEncryptedName(name) ? originalNameFromEnc(name) : name;
+  const dot = base.lastIndexOf(".");
   if (dot < 0) return "file";
-  const ext = name.slice(dot + 1).toLowerCase();
+  const ext = base.slice(dot + 1).toLowerCase();
   return ext.slice(0, 4);
 }
 

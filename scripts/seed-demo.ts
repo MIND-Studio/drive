@@ -10,8 +10,8 @@
  */
 import { Session } from "@inrupt/solid-client-authn-node";
 
-const POD_BASE = process.env.POD_BASE_URL ?? "http://localhost:3061/";
-const EMAIL = process.env.SEED_EMAIL ?? "alice@mind-drive.local";
+const POD_BASE = process.env.POD_BASE_URL ?? "http://localhost:3011/";
+const EMAIL = process.env.SEED_EMAIL ?? "alice@mind.local";
 const PASSWORD = process.env.SEED_PASSWORD ?? "dev-only-do-not-use-in-prod";
 const POD_NAME = process.env.SEED_POD ?? "alice";
 const NAMESPACE = process.env.NEXT_PUBLIC_DRIVE_NAMESPACE ?? "mind-drive";
