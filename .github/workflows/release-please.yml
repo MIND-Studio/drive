@@ -1,0 +1,36 @@
+# Automated changelog + release PRs from Conventional Commits.
+#
+# On every push to `main`, release-please maintains a "chore(main): release X.Y.Z"
+# PR that accumulates the generated CHANGELOG.md and bumps package.json. Merging
+# that PR creates the git tag `vX.Y.Z` + a GitHub Release, which in turn triggers
+# release.yml (the Docker build on `v*` tags).
+#
+# IMPORTANT: the default GITHUB_TOKEN does NOT trigger other workflows, so the tag
+# it pushes would not fire release.yml. Provide a PAT/App token as the repo secret
+# RELEASE_PLEASE_TOKEN (contents+PR write) so the release chains into the Docker
+# build. Without it, releases still work but you must run release.yml manually
+# (workflow_dispatch) after each release.
+#
+# Also enable: Settings → Actions → General → Workflow permissions →
+# "Allow GitHub Actions to create and approve pull requests".
+
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
