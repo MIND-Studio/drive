@@ -5,14 +5,18 @@
 # that PR creates the git tag `vX.Y.Z` + a GitHub Release, which in turn triggers
 # release.yml (the Docker build on `v*` tags).
 #
-# IMPORTANT: the default GITHUB_TOKEN does NOT trigger other workflows, so the tag
-# it pushes would not fire release.yml. Provide a PAT/App token as the repo secret
-# RELEASE_PLEASE_TOKEN (contents+PR write) so the release chains into the Docker
-# build. Without it, releases still work but you must run release.yml manually
-# (workflow_dispatch) after each release.
+# AUTH: we mint a short-lived token from an org-owned GitHub App (NOT the built-in
+# GITHUB_TOKEN). Two reasons:
+#   1. The default GITHUB_TOKEN is blocked from creating pull requests unless the
+#      repo setting "Allow Actions to create and approve PRs" is enabled.
+#   2. Anything done with GITHUB_TOKEN cannot trigger another workflow, so the tag
+#      it pushes would NOT fire release.yml (the Docker build). An App token is a
+#      first-class actor, so its tag push triggers release.yml.
 #
-# Also enable: Settings → Actions → General → Workflow permissions →
-# "Allow GitHub Actions to create and approve pull requests".
+# Org-level config (set once, shared by every repo — no per-repo secret):
+#   - org variable RELEASE_BOT_APP_ID        = the App's numeric App ID
+#   - org secret   RELEASE_BOT_PRIVATE_KEY   = the App's generated .pem private key
+# The App must be installed on the org with Contents: write + Pull requests: write.
 
 name: release-please
 
@@ -22,15 +26,21 @@ on:
       - main
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Mint App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
       - uses: googleapis/release-please-action@v4
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
