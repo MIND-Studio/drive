@@ -7,6 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { LauncherButton } from "@/components/LauncherButton";
 import { StandaloneOnly } from "@/components/StandaloneOnly";
 import { BrokerThemeSync } from "@/components/BrokerThemeSync";
+import { FeedbackLauncher } from "@/components/FeedbackLauncher";
 
 export const metadata: Metadata = {
   title: "Mind Drive — your files in your pod",
@@ -33,6 +34,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <StandaloneOnly>
             <Colophon />
+            <FeedbackLauncher />
           </StandaloneOnly>
         </ThemeProvider>
       </body>

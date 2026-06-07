@@ -15,12 +15,12 @@ a GitHub token with `read:packages` (`export NODE_AUTH_TOKEN=<PAT>`).
 ## Quickstart
 
 ```bash
+(cd .. && docker compose up -d) # shared Mind CSS on :3011 (see ../SOLID-SERVER.md)
 cd drive
-docker compose up -d            # CSS on :3061
 npm install
-npm run seed:demo               # populate alice + bob pods
+npm run seed:demo               # populate alice + bob pods (under /alice/mind-drive/)
 npm run dev                     # Next.js on :3060
-# open http://localhost:3060/connect → log in as alice@mind-drive.local
+# open http://localhost:3060/connect → log in as alice@mind.local
 ```
 
 ## What works (v0.1)
@@ -48,8 +48,7 @@ Sibling prototype to [`codespaces`](https://github.com/MIND-Studio/codespaces). 
 | Service     | Port |
 |-------------|------|
 | Next.js dev | 3060 |
-| CSS pod #1  | 3061 |
-| CSS pod #2  | 3062 (only if multi-pod sharing demo) |
+| Pod host    | shared Mind CSS `:3011` (see ../SOLID-SERVER.md) |
 
 ## Planning docs
 

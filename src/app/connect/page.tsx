@@ -51,8 +51,8 @@ export default function ConnectPage() {
             seed:demo</span> against this issuer if sign-in fails):
           </p>
           <ul className="mt-2 space-y-1 font-mono text-xs">
-            <li>alice@mind-drive.local · dev-only-do-not-use-in-prod</li>
-            <li>bob@mind-drive.local · dev-only-do-not-use-in-prod</li>
+            <li>alice@mind.local · dev-only-do-not-use-in-prod</li>
+            <li>bob@mind.local · dev-only-do-not-use-in-prod</li>
           </ul>
         </div>
       )}

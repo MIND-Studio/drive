@@ -3,7 +3,7 @@
  * flows through here, so flipping to a shared CSS instance is one env var.
  */
 export const POD_BASE_URL =
-  process.env.NEXT_PUBLIC_POD_BASE_URL ?? "http://localhost:3061/";
+  process.env.NEXT_PUBLIC_POD_BASE_URL ?? "http://localhost:3011/";
 
 /**
  * The namespace mind-drive claims under each user's pod. Sibling prototypes
@@ -12,6 +12,16 @@ export const POD_BASE_URL =
  */
 export const DRIVE_NAMESPACE =
   process.env.NEXT_PUBLIC_DRIVE_NAMESPACE ?? "mind-drive";
+
+/**
+ * App-owned feedback inbox (a public-append container the app developer
+ * controls). All feedback — from any user, logged in or not — is POSTed here,
+ * and the dev reads it from this one place via `/feedback`. Element-targeted
+ * feedback rides on the same record. See `@mind-studio/core/feedback`.
+ */
+export const feedbackInbox =
+  process.env.NEXT_PUBLIC_FEEDBACK_INBOX ??
+  `${POD_BASE_URL.endsWith("/") ? POD_BASE_URL : POD_BASE_URL + "/"}alice/drive-feedback/`;
 
 /** `https://alice.pod/mind-drive/files/` — the user's drive root container. */
 export function driveRootFor(podRoot: string): string {
