@@ -13,10 +13,12 @@
 #      it pushes would NOT fire release.yml (the Docker build). An App token is a
 #      first-class actor, so its tag push triggers release.yml.
 #
-# Org-level config (set once, shared by every repo — no per-repo secret):
-#   - org variable RELEASE_BOT_APP_ID        = the App's numeric App ID
-#   - org secret   RELEASE_BOT_PRIVATE_KEY   = the App's generated .pem private key
-# The App must be installed on the org with Contents: write + Pull requests: write.
+# Auth config (org is on the Free plan, so org-level secrets do NOT reach private
+# repos — we use a per-repo secret instead):
+#   - app-id below is the org App's numeric ID (not secret, safe to commit)
+#   - repo secret RELEASE_BOT_PRIVATE_KEY = that App's generated .pem private key
+# The org App (mind-release-bot) must be installed with Contents: write +
+# Pull requests: write. Roll out to another repo = add the same repo secret there.
 
 name: release-please
 
@@ -36,7 +38,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          app-id: "3988007"
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
 
       - uses: googleapis/release-please-action@v4
