@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/MIND-Studio/drive/compare/v0.2.1...v0.2.2) (2026-06-11)
+
+
+### Bug Fixes
+
+* correct apps/ relocation README path + DriveBrowser tweak ([8febadc](https://github.com/MIND-Studio/drive/commit/8febadc27f03133179b94d6028f6df11b5207bcd))
+
 ## [0.2.1](https://github.com/MIND-Studio/drive/compare/v0.2.0...v0.2.1) (2026-06-07)
 
 
