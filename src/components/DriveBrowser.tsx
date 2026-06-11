@@ -1066,8 +1066,11 @@ function Icon({ kind, name }: { kind: "container" | "resource"; name: string }) 
 // Encrypted files are stored as `<name>.enc` on the pod, but that suffix is an
 // implementation detail (same reasoning as hiding the `.enc.json` sidecars).
 // Present them with their original name + a lock, matching the file viewer.
+// Names are URL segments, so percent-decode for display (like the breadcrumbs):
+// `Shared%20Demo` reads as "Shared Demo".
 function displayName(name: string): string {
-  return isEncryptedName(name) ? `🔒 ${originalNameFromEnc(name)}` : name;
+  const n = safeDecode(name);
+  return isEncryptedName(n) ? `🔒 ${originalNameFromEnc(n)}` : n;
 }
 
 function extLabel(name: string): string {

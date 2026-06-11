@@ -15,8 +15,8 @@ a GitHub token with `read:packages` (`export NODE_AUTH_TOKEN=<PAT>`).
 ## Quickstart
 
 ```bash
-(cd .. && docker compose up -d) # shared Mind CSS on :3011 (see ../SOLID-SERVER.md)
-cd drive
+(cd ../.. && docker compose up -d) # shared Mind CSS on :3011 (see ../../SOLID-SERVER.md)
+cd apps/drive
 npm install
 npm run seed:demo               # populate alice + bob pods (under /alice/mind-drive/)
 npm run dev                     # Next.js on :3060
@@ -48,7 +48,7 @@ Sibling prototype to [`codespaces`](https://github.com/MIND-Studio/codespaces). 
 | Service     | Port |
 |-------------|------|
 | Next.js dev | 3060 |
-| Pod host    | shared Mind CSS `:3011` (see ../SOLID-SERVER.md) |
+| Pod host    | shared Mind CSS `:3011` (see ../../SOLID-SERVER.md) |
 
 ## Planning docs
 
