@@ -1,29 +1,23 @@
 "use client";
 
-import { getDefaultSession } from "@inrupt/solid-client-authn-browser";
+import type { Session } from "@inrupt/solid-client-authn-browser";
+import { solid, DEFAULT_ISSUER } from "./client";
 
 /**
- * The browser SDK keeps a process-wide default session. We re-export it as a
- * single helper so call sites never accidentally instantiate a second one
- * and end up unauthenticated.
+ * Thin re-exports over the shared {@link solid} client (see `client.ts`). The
+ * implementation now lives in `@mind-studio/core/solid`; these shims keep the
+ * app's existing import paths stable.
  */
-export function session() {
-  return getDefaultSession();
+export { DEFAULT_ISSUER };
+
+export function session(): Session {
+  return solid.session();
 }
-
-const ISSUER_KEY = "mind-drive:oidc-issuer";
-
-export const DEFAULT_ISSUER =
-  process.env.NEXT_PUBLIC_SOLID_ISSUER ??
-  process.env.NEXT_PUBLIC_POD_BASE_URL ??
-  "https://pods.mindpods.org/";
 
 export function storedIssuer(): string {
-  if (typeof window === "undefined") return DEFAULT_ISSUER;
-  return localStorage.getItem(ISSUER_KEY) ?? DEFAULT_ISSUER;
+  return solid.storedIssuer();
 }
 
-export function rememberIssuer(issuer: string) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(ISSUER_KEY, issuer);
+export function rememberIssuer(issuer: string): void {
+  solid.rememberIssuer(issuer);
 }
