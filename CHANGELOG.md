@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/MIND-Studio/drive/compare/v0.2.2...v0.3.0) (2026-06-20)
+
+
+### Features
+
+* adopt ui ^0.4.0 fonts + core ^0.7.0 login accent ([#10](https://github.com/MIND-Studio/drive/issues/10)) ([42c0117](https://github.com/MIND-Studio/drive/commit/42c01171fdbc6896f6306bdc00e11e0b27c3259d))
+
 ## [0.2.2](https://github.com/MIND-Studio/drive/compare/v0.2.1...v0.2.2) (2026-06-11)
 
 
