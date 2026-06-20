@@ -17,8 +17,6 @@ import {
 
 const APP_NAME = "Drive";
 const CLIENT_NAME = "Mind Drive";
-// Mind brand primary (teal), so the login card matches the design system.
-const MIND_ACCENT = "#0d9488";
 
 /**
  * Start the OIDC redirect. Mirrors `@mind-studio/core`'s `browserOidcLogin` but
@@ -122,7 +120,6 @@ export default function ConnectForm() {
       <MindLoginCard
         appName={APP_NAME}
         defaultIssuer={DEFAULT_ISSUER}
-        accent={MIND_ACCENT}
         onLogin={async ({ issuer }) => {
           rememberIssuer(issuer);
           // Fall back to /drive only if a deep link wasn't already remembered
