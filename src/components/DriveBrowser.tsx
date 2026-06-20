@@ -1,54 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { Button, Checkbox, Input, ToggleGroup, ToggleGroupItem } from "@mind-studio/ui";
 import {
-  Button,
-  Input,
-  Checkbox,
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@mind-studio/ui";
-import {
-  Upload,
-  FolderPlus,
-  List as ListIcon,
-  LayoutGrid,
   Download,
+  Folder,
+  FolderPlus,
+  LayoutGrid,
+  List as ListIcon,
   Pencil,
   Trash2,
+  Upload,
   X,
-  Folder,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ensureSession,
-  rememberSignedOutPath,
-  isEmbedded,
-} from "@/lib/solid/auth";
-import { currentIdentity, isBrokered, signalReady } from "@/lib/solid/broker";
-import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
-import PassphraseDialog from "@/components/PassphraseDialog";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import PassphraseDialog from "@/components/PassphraseDialog";
+import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
+import { driveRootFor, normalizeSegment } from "@/lib/config";
+import { ensureSession, isEmbedded, rememberSignedOutPath } from "@/lib/solid/auth";
+import { currentIdentity, isBrokered, signalReady } from "@/lib/solid/broker";
 import {
   encryptFile,
   getSessionPassphrase,
-  setSessionPassphrase,
   isEncryptedName,
   originalNameFromEnc,
+  setSessionPassphrase,
   sidecarUrlFor,
 } from "@/lib/solid/crypto";
 import {
-  readdir,
-  mkdir,
-  rmrf,
-  rename,
-  writeFileBlob,
-  podFetch,
   guessContentType,
+  mkdir,
   type PodEntry,
+  podFetch,
+  readdir,
+  rename,
+  rmrf,
+  writeFileBlob,
 } from "@/lib/solid/pod-fs";
-import { driveRootFor, normalizeSegment } from "@/lib/config";
 
 type State =
   | { kind: "booting" }
@@ -75,11 +65,7 @@ function loadViewMode(): ViewMode {
   }
 }
 
-export default function DriveBrowser({
-  pathSegments,
-}: {
-  pathSegments: string[];
-}) {
+export default function DriveBrowser({ pathSegments }: { pathSegments: string[] }) {
   const [state, setState] = useState<State>({ kind: "booting" });
   const [uploadProgress, setUploadProgress] = useState<
     { name: string; done: number; total: number }[]
@@ -87,9 +73,10 @@ export default function DriveBrowser({
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [encryptUploads, setEncryptUploads] = useState(false);
-  const [passphrasePrompt, setPassphrasePrompt] = useState<
-    null | { pendingFiles: File[]; confirmRequired: boolean }
-  >(null);
+  const [passphrasePrompt, setPassphrasePrompt] = useState<null | {
+    pendingFiles: File[];
+    confirmRequired: boolean;
+  }>(null);
   /**
    * Sticky upload-error banner. Lives outside `state` so the `finally`-block
    * refresh() in uploadFiles doesn't wipe it. Cleared on the next successful
@@ -198,8 +185,7 @@ export default function DriveBrowser({
             const passphrase = getSessionPassphrase();
             if (!passphrase) throw new Error("Missing session passphrase");
             const { ciphertext, sidecar } = await encryptFile(passphrase, f, f.name);
-            const encUrl =
-              state.containerUrl + encodeURIComponent(f.name) + ".enc";
+            const encUrl = state.containerUrl + encodeURIComponent(f.name) + ".enc";
             const metaUrl = sidecarUrlFor(encUrl);
             await writeFileBlob(encUrl, ciphertext, "application/octet-stream");
             const sidecarBlob = new Blob([JSON.stringify(sidecar)], {
@@ -212,9 +198,7 @@ export default function DriveBrowser({
             await writeFileBlob(url, f, contentType);
           }
           setUploadProgress((prev) =>
-            prev.map((p, idx) =>
-              idx === i ? { ...p, done: p.total } : p
-            )
+            prev.map((p, idx) => (idx === i ? { ...p, done: p.total } : p)),
           );
         }
       } catch (e) {
@@ -227,7 +211,7 @@ export default function DriveBrowser({
         await refresh();
       }
     },
-    [refresh, state, encryptUploads]
+    [refresh, state, encryptUploads],
   );
 
   if (state.kind === "booting") {
@@ -272,9 +256,7 @@ export default function DriveBrowser({
         encryptUploads={encryptUploads}
         onEncryptUploadsChange={setEncryptUploads}
       />
-      {uploadProgress.length > 0 ? (
-        <UploadProgress items={uploadProgress} />
-      ) : null}
+      {uploadProgress.length > 0 ? <UploadProgress items={uploadProgress} /> : null}
       {uploadError ? (
         <div
           className="mt-4 flex items-start justify-between gap-3 rounded-md border border-destructive/50 bg-destructive/10 p-3"
@@ -284,13 +266,10 @@ export default function DriveBrowser({
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-destructive">
               Upload failed
             </p>
-            <p className="mt-1 break-all font-mono text-xs text-foreground">
-              {uploadError}
-            </p>
+            <p className="mt-1 break-all font-mono text-xs text-foreground">{uploadError}</p>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Common causes: signed-out session (re-login at /connect), the
-              filename collides with an existing folder, or your pod denied the
-              write.
+              Common causes: signed-out session (re-login at /connect), the filename collides with
+              an existing folder, or your pod denied the write.
             </p>
           </div>
           <Button
@@ -348,9 +327,7 @@ function hideEncryptedSidecars(entries: PodEntry[]): PodEntry[] {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="mx-auto max-w-5xl px-6 py-10 sm:px-10">{children}</section>
-  );
+  return <section className="mx-auto max-w-5xl px-6 py-10 sm:px-10">{children}</section>;
 }
 
 function SignedOut() {
@@ -376,12 +353,9 @@ function SignedOut() {
 
   return (
     <div className="rounded-lg border bg-card p-8 text-center">
-      <p className="text-2xl font-semibold tracking-tight">
-        Connect your pod to see your drive.
-      </p>
+      <p className="text-2xl font-semibold tracking-tight">Connect your pod to see your drive.</p>
       <p className="mt-3 text-sm text-muted-foreground">
-        Mind Drive only reads files you authorize. Sign in with your WebID to
-        get started.
+        Mind Drive only reads files you authorize. Sign in with your WebID to get started.
       </p>
       <Button asChild className="mt-6">
         <Link href="/connect">Connect a pod</Link>
@@ -390,13 +364,7 @@ function SignedOut() {
   );
 }
 
-function ErrorPanel({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
+function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-5">
       <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-destructive">
@@ -420,9 +388,7 @@ function Crumbs({
   pathSegments: string[];
 }) {
   const crumbs = useMemo(() => {
-    const acc: { label: string; href: string }[] = [
-      { label: "My Drive", href: "/drive" },
-    ];
+    const acc: { label: string; href: string }[] = [{ label: "My Drive", href: "/drive" }];
     for (let i = 0; i < pathSegments.length; i++) {
       const slice = pathSegments.slice(0, i + 1);
       acc.push({
@@ -442,14 +408,9 @@ function Crumbs({
             <span key={c.href} className="flex items-center gap-1">
               {i > 0 ? <span className="text-muted-foreground">/</span> : null}
               {isLast ? (
-                <span className="text-2xl font-semibold tracking-tight">
-                  {c.label}
-                </span>
+                <span className="text-2xl font-semibold tracking-tight">{c.label}</span>
               ) : (
-                <Link
-                  href={c.href}
-                  className="text-muted-foreground hover:text-primary"
-                >
+                <Link href={c.href} className="text-muted-foreground hover:text-primary">
                   {c.label}
                 </Link>
               )}
@@ -457,10 +418,7 @@ function Crumbs({
           );
         })}
       </nav>
-      <p
-        className="hidden font-mono text-xs text-muted-foreground sm:block"
-        title={containerUrl}
-      >
+      <p className="hidden font-mono text-xs text-muted-foreground sm:block" title={containerUrl}>
         {containerUrl.replace(driveRoot, "/")}
       </p>
     </div>
@@ -512,11 +470,7 @@ function Toolbar({
 
   return (
     <div className="mt-6 flex flex-wrap items-center gap-2">
-      <Button
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-        data-testid="upload-button"
-      >
+      <Button size="sm" onClick={() => fileInputRef.current?.click()} data-testid="upload-button">
         <Upload className="size-4" /> Upload
       </Button>
       <input
@@ -543,12 +497,7 @@ function Toolbar({
             className="h-8 w-44"
             data-testid="new-folder-input"
           />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={busy}
-            data-testid="new-folder-submit"
-          >
+          <Button type="submit" size="sm" disabled={busy} data-testid="new-folder-submit">
             Create
           </Button>
           <Button
@@ -652,16 +601,9 @@ function Dropzone({
   );
 }
 
-function UploadProgress({
-  items,
-}: {
-  items: { name: string; done: number; total: number }[];
-}) {
+function UploadProgress({ items }: { items: { name: string; done: number; total: number }[] }) {
   return (
-    <div
-      className="mt-4 rounded-md border bg-muted/40 p-3"
-      data-testid="upload-progress"
-    >
+    <div className="mt-4 rounded-md border bg-muted/40 p-3" data-testid="upload-progress">
       <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
         Uploading…
       </p>
@@ -743,10 +685,7 @@ function Listing({
     );
   }
   return (
-    <ul
-      className="mt-4 divide-y rounded-md border bg-card"
-      data-testid="drive-listing"
-    >
+    <ul className="mt-4 divide-y rounded-md border bg-card" data-testid="drive-listing">
       {entries.map((entry) => (
         <Row
           key={entry.url}
@@ -772,9 +711,7 @@ function Tile({
 }) {
   const relPath = entry.url.slice(driveRoot.length);
   const href =
-    entry.kind === "container"
-      ? "/drive/" + relPath.replace(/\/$/, "")
-      : "/drive/file/" + relPath;
+    entry.kind === "container" ? "/drive/" + relPath.replace(/\/$/, "") : "/drive/file/" + relPath;
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   async function doDelete() {
@@ -806,10 +743,7 @@ function Tile({
           ) : isImageName(entry.name) ? (
             <ImageThumbnail url={entry.url} alt={entry.name} className="h-32 w-full" />
           ) : (
-            <span
-              className="font-mono text-xs uppercase text-muted-foreground"
-              aria-hidden="true"
-            >
+            <span className="font-mono text-xs uppercase text-muted-foreground" aria-hidden="true">
               {extLabel(entry.name)}
             </span>
           )}
@@ -820,7 +754,11 @@ function Tile({
             {entry.kind === "container" ? "/" : ""}
           </p>
           <p className="font-mono text-[10px] text-muted-foreground">
-            {entry.size != null ? formatBytes(entry.size) : entry.kind === "container" ? "folder" : ""}
+            {entry.size != null
+              ? formatBytes(entry.size)
+              : entry.kind === "container"
+                ? "folder"
+                : ""}
           </p>
         </div>
       </Link>
@@ -866,9 +804,7 @@ function Row({
 }) {
   const relPath = entry.url.slice(driveRoot.length);
   const href =
-    entry.kind === "container"
-      ? "/drive/" + relPath.replace(/\/$/, "")
-      : "/drive/file/" + relPath;
+    entry.kind === "container" ? "/drive/" + relPath.replace(/\/$/, "") : "/drive/file/" + relPath;
   const [busy, setBusy] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(entry.name);
@@ -979,11 +915,7 @@ function Row({
             {entry.kind === "container" ? "/" : ""}
           </Link>
           <span className="hidden w-24 text-right font-mono text-xs text-muted-foreground sm:block">
-            {entry.size != null
-              ? formatBytes(entry.size)
-              : entry.kind === "container"
-              ? "—"
-              : ""}
+            {entry.size != null ? formatBytes(entry.size) : entry.kind === "container" ? "—" : ""}
           </span>
           <span className="hidden w-40 text-right font-mono text-xs text-muted-foreground sm:block">
             {entry.modified ? entry.modified.toLocaleString() : ""}

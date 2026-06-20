@@ -37,7 +37,7 @@ function authedFetch(): typeof fetch {
 
 export async function getAgentAccess(
   resourceUrl: string,
-  webId: string
+  webId: string,
 ): Promise<AccessFlags | null> {
   try {
     // Signature: (resourceUrl, webId, options) — see node_modules/@inrupt/
@@ -54,22 +54,15 @@ export async function getAgentAccess(
 export async function setAgentRead(
   resourceUrl: string,
   webId: string,
-  read: boolean
+  read: boolean,
 ): Promise<void> {
   // Signature: (resourceUrl, webId, access, options). The argument order is
   //   webId BEFORE access — easy to flip and the SDK reports a confusing
   //   "Expected a valid URL" error when you do.
-  await universalAccess.setAgentAccess(
-    resourceUrl,
-    webId,
-    { read },
-    { fetch: authedFetch() }
-  );
+  await universalAccess.setAgentAccess(resourceUrl, webId, { read }, { fetch: authedFetch() });
 }
 
-export async function getPublicAccess(
-  resourceUrl: string
-): Promise<AccessFlags | null> {
+export async function getPublicAccess(resourceUrl: string): Promise<AccessFlags | null> {
   try {
     const access = await universalAccess.getPublicAccess(resourceUrl, {
       fetch: authedFetch(),
@@ -80,13 +73,6 @@ export async function getPublicAccess(
   }
 }
 
-export async function setPublicRead(
-  resourceUrl: string,
-  read: boolean
-): Promise<void> {
-  await universalAccess.setPublicAccess(
-    resourceUrl,
-    { read },
-    { fetch: authedFetch() }
-  );
+export async function setPublicRead(resourceUrl: string, read: boolean): Promise<void> {
+  await universalAccess.setPublicAccess(resourceUrl, { read }, { fetch: authedFetch() });
 }

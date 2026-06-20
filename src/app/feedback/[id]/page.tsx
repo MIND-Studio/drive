@@ -1,20 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@mind-studio/ui";
-import { readFeedback, setFeedbackStatus } from "@mind-studio/core/feedback";
 import type {
   FeedbackEntry,
-  Sentiment,
   FeedbackKind,
   FeedbackStatus,
+  Sentiment,
 } from "@mind-studio/core/feedback";
+import { readFeedback, setFeedbackStatus } from "@mind-studio/core/feedback";
+import { Button } from "@mind-studio/ui";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { StatusControl } from "@/components/FeedbackBoard";
 import { feedbackInbox } from "@/lib/config";
 import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
 import { podFetch } from "@/lib/solid/pod-fs";
-import { StatusControl } from "@/components/FeedbackBoard";
 
 const FACE: Record<Sentiment, string> = { bad: "😞", meh: "😐", good: "🙂", love: "😍" };
 const FACE_LABEL: Record<Sentiment, string> = {
@@ -247,15 +247,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Row({
-  label,
-  value,
-  breakAll,
-}: {
-  label: string;
-  value: string;
-  breakAll?: boolean;
-}) {
+function Row({ label, value, breakAll }: { label: string; value: string; breakAll?: boolean }) {
   return (
     <>
       <dt className="opacity-70">{label}</dt>
@@ -271,8 +263,10 @@ function Row({
  */
 function ElementDiagram({ entry }: { entry: FeedbackEntry }) {
   const t = entry.target!;
-  const [vw, vh] = (entry.viewport.match(/^(\d+)x(\d+)$/)?.slice(1).map(Number) ??
-    [t.rect.x + t.rect.w, t.rect.y + t.rect.h]) as [number, number];
+  const [vw, vh] = (entry.viewport
+    .match(/^(\d+)x(\d+)$/)
+    ?.slice(1)
+    .map(Number) ?? [t.rect.x + t.rect.w, t.rect.y + t.rect.h]) as [number, number];
   const FRAME_W = 280;
   const scale = vw > 0 ? FRAME_W / vw : 1;
   const frameH = Math.max(40, Math.round(vh * scale));
@@ -302,10 +296,7 @@ function ElementDiagram({ entry }: { entry: FeedbackEntry }) {
         <Row label="selector" value={t.selector} breakAll />
         <Row label="tag" value={t.tag + (t.role ? ` (role=${t.role})` : "")} />
         {t.testid && <Row label="testid" value={t.testid} />}
-        <Row
-          label="rect"
-          value={`${t.rect.w}×${t.rect.h} @ ${t.rect.x},${t.rect.y}`}
-        />
+        <Row label="rect" value={`${t.rect.w}×${t.rect.h} @ ${t.rect.x},${t.rect.y}`} />
       </dl>
     </div>
   );

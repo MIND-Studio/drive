@@ -77,17 +77,13 @@ function unb64(s: string): Uint8Array {
   return out;
 }
 
-async function deriveKek(
-  passphrase: string,
-  salt: Uint8Array,
-  iters: number
-): Promise<CryptoKey> {
+async function deriveKek(passphrase: string, salt: Uint8Array, iters: number): Promise<CryptoKey> {
   const baseKey = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(passphrase),
     "PBKDF2",
     false,
-    ["deriveKey"]
+    ["deriveKey"],
   );
   return crypto.subtle.deriveKey(
     {
@@ -99,7 +95,7 @@ async function deriveKek(
     baseKey,
     { name: "AES-GCM", length: KEY_LEN },
     false,
-    ["wrapKey", "unwrapKey"]
+    ["wrapKey", "unwrapKey"],
   );
 }
 
@@ -116,19 +112,18 @@ export type EncryptedBlob = {
 export async function encryptFile(
   passphrase: string,
   file: Blob,
-  originalName: string
+  originalName: string,
 ): Promise<EncryptedBlob> {
-  const fileKey = await crypto.subtle.generateKey(
-    { name: "AES-GCM", length: KEY_LEN },
-    true,
-    ["encrypt", "decrypt"]
-  );
+  const fileKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: KEY_LEN }, true, [
+    "encrypt",
+    "decrypt",
+  ]);
   const iv = crypto.getRandomValues(new Uint8Array(IV_LEN));
   const plaintext = new Uint8Array(await file.arrayBuffer());
   const ciphertextBuf = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv: iv as BufferSource },
     fileKey,
-    plaintext as BufferSource
+    plaintext as BufferSource,
   );
 
   const kdfSalt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
@@ -161,7 +156,7 @@ export async function encryptFile(
 export async function decryptFile(
   passphrase: string,
   ciphertext: Blob,
-  sidecar: EncryptedSidecar
+  sidecar: EncryptedSidecar,
 ): Promise<Blob> {
   if (sidecar.v !== 1) {
     throw new Error(`Unsupported sidecar version: ${sidecar.v}`);
@@ -179,7 +174,7 @@ export async function decryptFile(
       { name: "AES-GCM", iv: iv as BufferSource },
       { name: "AES-GCM", length: KEY_LEN },
       false,
-      ["decrypt"]
+      ["decrypt"],
     );
   } catch {
     throw new Error("Wrong passphrase, or the file has been tampered with.");
@@ -188,7 +183,7 @@ export async function decryptFile(
   const plaintextBuf = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: iv as BufferSource },
     fileKey,
-    ct as BufferSource
+    ct as BufferSource,
   );
   return new Blob([plaintextBuf], { type: sidecar.contentType });
 }

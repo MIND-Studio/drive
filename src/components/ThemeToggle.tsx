@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Button, useMindTheme } from "@mind-studio/ui";
 import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 
 /**
  * Light/dark switch backed by the @mind-studio/ui ThemeProvider (next-themes

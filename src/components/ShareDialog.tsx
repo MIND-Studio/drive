@@ -1,26 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Button,
-  Input,
-  Label,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
+  Input,
+  Label,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from "@mind-studio/ui";
-import {
-  getAgentAccess,
-  setAgentRead,
-  getPublicAccess,
-  setPublicRead,
-} from "@/lib/solid/access";
+import { useEffect, useState } from "react";
+import { getAgentAccess, getPublicAccess, setAgentRead, setPublicRead } from "@/lib/solid/access";
 
 type Tab = "webid" | "public";
 
@@ -70,9 +65,7 @@ export default function ShareDialog({
       await setAgentRead(resourceUrl, trimmed, true);
       const probe = await getAgentAccess(resourceUrl, trimmed);
       if (probe?.read) {
-        setGrantedWebIds((prev) =>
-          prev.includes(trimmed) ? prev : [...prev, trimmed]
-        );
+        setGrantedWebIds((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
         setConfirmation(`Granted read to ${trimmed}`);
         setWebId("");
       } else {
@@ -127,7 +120,12 @@ export default function ShareDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-lg" data-testid="share-dialog">
         <DialogHeader>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
@@ -196,9 +194,7 @@ export default function ShareDialog({
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm">
-                      Make this file readable by anyone with the link.
-                    </p>
+                    <p className="text-sm">Make this file readable by anyone with the link.</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Current state: {publicRead ? "public" : "private"}
                     </p>
@@ -222,10 +218,7 @@ export default function ShareDialog({
                     <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                       Shareable URL
                     </p>
-                    <p
-                      className="mt-2 break-all font-mono text-xs"
-                      data-testid="share-public-url"
-                    >
+                    <p className="mt-2 break-all font-mono text-xs" data-testid="share-public-url">
                       {resourceUrl}
                     </p>
                     <Button

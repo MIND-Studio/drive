@@ -1,7 +1,7 @@
 "use client";
 
 import type { Session } from "@inrupt/solid-client-authn-browser";
-import { solid, DEFAULT_ISSUER } from "./client";
+import { DEFAULT_ISSUER, solid } from "./client";
 
 /**
  * Thin re-exports over the shared {@link solid} client (see `client.ts`). The
