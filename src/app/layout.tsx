@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider, Button } from "@mind-studio/ui";
 import { mind } from "@mind-studio/ui/themes";
 import "./globals.css";
@@ -8,6 +9,22 @@ import { LauncherButton } from "@/components/LauncherButton";
 import { StandaloneOnly } from "@/components/StandaloneOnly";
 import { BrokerThemeSync } from "@/components/BrokerThemeSync";
 import { FeedbackLauncher } from "@/components/FeedbackLauncher";
+
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+const body = Hanken_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jb",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Mind Drive — your files in your pod",
@@ -19,7 +36,12 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-mind-theme="mind" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-mind-theme="mind"
+      className={`${display.variable} ${body.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen flex flex-col bg-background text-foreground">
         <ThemeProvider
           theme={mind}
