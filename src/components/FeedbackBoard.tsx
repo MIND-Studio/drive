@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import type {
   FeedbackEntry,
+  FeedbackKind,
   FeedbackStatus,
   Sentiment,
-  FeedbackKind,
 } from "@mind-studio/core/feedback";
 import { FEEDBACK_STATUSES } from "@mind-studio/core/feedback";
+import Link from "next/link";
 
 const FACE: Record<Sentiment, string> = {
   bad: "😞",
@@ -23,10 +23,7 @@ const KIND_ICON: Record<FeedbackKind, string> = {
 };
 
 /** Triage states, shared between the inbox list and the board. */
-export const STATUS_META: Record<
-  FeedbackStatus,
-  { label: string; icon: string }
-> = {
+export const STATUS_META: Record<FeedbackStatus, { label: string; icon: string }> = {
   new: { label: "New", icon: "🆕" },
   "in-progress": { label: "In progress", icon: "🔧" },
   done: { label: "Done", icon: "✅" },

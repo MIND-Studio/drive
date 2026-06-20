@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { useMindTheme } from "@mind-studio/ui";
+import { useEffect } from "react";
 import { currentBrokeredTheme, subscribeBrokeredTheme } from "@/lib/solid/broker";
 
 /**

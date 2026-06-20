@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
-import { ThemeProvider, Button } from "@mind-studio/ui";
+import { Button, ThemeProvider } from "@mind-studio/ui";
 import { mind } from "@mind-studio/ui/themes";
+import type { Metadata } from "next";
+import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
-import { LauncherButton } from "@/components/LauncherButton";
-import { StandaloneOnly } from "@/components/StandaloneOnly";
 import { BrokerThemeSync } from "@/components/BrokerThemeSync";
 import { FeedbackLauncher } from "@/components/FeedbackLauncher";
+import { LauncherButton } from "@/components/LauncherButton";
+import { StandaloneOnly } from "@/components/StandaloneOnly";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const display = Fraunces({
   subsets: ["latin"],
@@ -32,9 +32,7 @@ export const metadata: Metadata = {
     "A privacy-first Google Drive / Dropbox alternative built on Solid Pods. Your bytes never leave your pod.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
@@ -69,9 +67,7 @@ function Masthead() {
     <header className="border-b bg-card">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-8 px-6 py-4 sm:px-10">
         <Link href="/" className="flex items-baseline gap-3">
-          <span className="text-2xl font-semibold tracking-tight">
-            Mind Drive
-          </span>
+          <span className="text-2xl font-semibold tracking-tight">Mind Drive</span>
           <span className="hidden text-[10px] uppercase tracking-[0.22em] text-muted-foreground sm:inline">
             <span className="text-primary">●</span> files in your pod
           </span>
@@ -97,9 +93,8 @@ function Colophon() {
       <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
         <p className="text-2xl font-semibold tracking-tight">Mind Drive</p>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          A prototype that treats your Solid Pod as a real Drive. No central
-          server holds your bytes. Sibling of Mind Market, Codespaces, OS, and
-          Social Network.
+          A prototype that treats your Solid Pod as a real Drive. No central server holds your
+          bytes. Sibling of Mind Market, Codespaces, OS, and Social Network.
         </p>
         <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
           v0.1 · walking skeleton

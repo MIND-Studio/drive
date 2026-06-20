@@ -1,7 +1,7 @@
 "use client";
 
-import { solid } from "./client";
 import type { BrokerIdentity, BrokerTheme } from "@mind-studio/core/solid";
+import { solid } from "./client";
 
 /**
  * Thin re-exports over the shared {@link solid} client's broker (see

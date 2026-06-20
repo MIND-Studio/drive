@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@mind-studio/ui";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { completeLoginRedirect, consumeReturnTo } from "@/lib/solid/auth";
 
 export default function LoginCallbackPage() {

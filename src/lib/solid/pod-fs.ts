@@ -1,12 +1,7 @@
 "use client";
 
+import { getContentType, guessContentType, type PodEntry, parentOf } from "@mind-studio/core/solid";
 import { solid } from "./client";
-import {
-  guessContentType,
-  parentOf,
-  getContentType,
-  type PodEntry,
-} from "@mind-studio/core/solid";
 
 /**
  * Thin re-exports over the shared {@link solid} client's pod fs (see
@@ -16,7 +11,7 @@ import {
  * resolved by the shared client, so callers never wire auth themselves.
  */
 export type { PodEntry };
-export { guessContentType, parentOf, getContentType };
+export { getContentType, guessContentType, parentOf };
 
 /** Public accessor for the active authed fetch (brokered or local). */
 export function podFetch(): typeof fetch {
@@ -35,19 +30,11 @@ export function readFileBlob(url: string): Promise<Blob> {
   return solid.fs.readFileBlob(url);
 }
 
-export function writeFileText(
-  url: string,
-  contents: string,
-  contentType?: string,
-): Promise<void> {
+export function writeFileText(url: string, contents: string, contentType?: string): Promise<void> {
   return solid.fs.writeFileText(url, contents, contentType);
 }
 
-export function writeFileBlob(
-  url: string,
-  blob: Blob,
-  contentType?: string,
-): Promise<string> {
+export function writeFileBlob(url: string, blob: Blob, contentType?: string): Promise<string> {
   return solid.fs.writeFileBlob(url, blob, contentType);
 }
 
@@ -63,10 +50,6 @@ export function rmrf(url: string): Promise<void> {
   return solid.fs.rmrf(url);
 }
 
-export function rename(
-  fromUrl: string,
-  toUrl: string,
-  contentType?: string,
-): Promise<void> {
+export function rename(fromUrl: string, toUrl: string, contentType?: string): Promise<void> {
   return solid.fs.rename(fromUrl, toUrl, contentType);
 }

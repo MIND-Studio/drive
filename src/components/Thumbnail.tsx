@@ -64,14 +64,7 @@ export function ImageThumbnail({
   }
 
   // eslint-disable-next-line @next/next/no-img-element
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={`object-cover ${className ?? ""}`}
-      loading="lazy"
-    />
-  );
+  return <img src={src} alt={alt} className={`object-cover ${className ?? ""}`} loading="lazy" />;
 }
 
 export function isImageName(name: string): boolean {

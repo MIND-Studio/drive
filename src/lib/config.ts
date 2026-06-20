@@ -2,16 +2,14 @@
  * Single source of truth for pod URLs. Every Solid call in this prototype
  * flows through here, so flipping to a shared CSS instance is one env var.
  */
-export const POD_BASE_URL =
-  process.env.NEXT_PUBLIC_POD_BASE_URL ?? "http://localhost:3011/";
+export const POD_BASE_URL = process.env.NEXT_PUBLIC_POD_BASE_URL ?? "http://localhost:3011/";
 
 /**
  * The namespace mind-drive claims under each user's pod. Sibling prototypes
  * claim their own (`mind-market`, `mind-social`, …) so a shared-CSS scenario
  * has no collisions.
  */
-export const DRIVE_NAMESPACE =
-  process.env.NEXT_PUBLIC_DRIVE_NAMESPACE ?? "mind-drive";
+export const DRIVE_NAMESPACE = process.env.NEXT_PUBLIC_DRIVE_NAMESPACE ?? "mind-drive";
 
 /**
  * App-owned feedback inbox (a public-append container the app developer

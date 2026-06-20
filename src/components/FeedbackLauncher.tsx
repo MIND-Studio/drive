@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { FeedbackWidget } from "@mind-studio/core/feedback";
+import { useCallback, useEffect, useState } from "react";
 import { feedbackInbox } from "@/lib/config";
 import { ensureSession } from "@/lib/solid/auth";
 import { podFetch } from "@/lib/solid/pod-fs";

@@ -8,8 +8,7 @@ const ISSUER =
   process.env.NEXT_PUBLIC_SOLID_ISSUER ??
   process.env.NEXT_PUBLIC_POD_BASE_URL ??
   "https://pods.mindpods.org/";
-const IS_LOCAL_ISSUER =
-  ISSUER.includes("localhost") || ISSUER.includes("127.0.0.1");
+const IS_LOCAL_ISSUER = ISSUER.includes("localhost") || ISSUER.includes("127.0.0.1");
 // Show the actual issuer host the build targets, not a hardcoded port — the
 // dev CSS lives on different ports across the fleet (3011 shared / 3061 drive's
 // own / 3101), and "Continue with Mind" redirects to *this* issuer, so the
@@ -33,8 +32,8 @@ export default function ConnectPage() {
         Sign in with your Solid identity.
       </h1>
       <p className="mt-4 text-muted-foreground">
-        Pick the issuer that hosts your pod. We&apos;ll redirect you there for
-        the OIDC dance and come back here once you&apos;re signed in.
+        Pick the issuer that hosts your pod. We&apos;ll redirect you there for the OIDC dance and
+        come back here once you&apos;re signed in.
       </p>
       <div className="mt-8">
         <ConnectForm />
@@ -46,9 +45,9 @@ export default function ConnectPage() {
           </p>
           <p className="mt-2">
             The local CSS instance at{" "}
-            <span className="font-mono text-foreground">{ISSUER_HOST}</span> has
-            two pre-seeded accounts (run <span className="font-mono">npm run
-            seed:demo</span> against this issuer if sign-in fails):
+            <span className="font-mono text-foreground">{ISSUER_HOST}</span> has two pre-seeded
+            accounts (run <span className="font-mono">npm run seed:demo</span> against this issuer
+            if sign-in fails):
           </p>
           <ul className="mt-2 space-y-1 font-mono text-xs">
             <li>alice@mind.local · dev-only-do-not-use-in-prod</li>

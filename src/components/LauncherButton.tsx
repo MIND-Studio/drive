@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MindAppLauncher } from "@mind-studio/core/launcher";
 import { DEFAULT_APPS } from "@mind-studio/core/apps";
+import { MindAppLauncher } from "@mind-studio/core/launcher";
+import { useEffect, useState } from "react";
 import { ensureSession } from "@/lib/solid/auth";
 
 /**
@@ -20,7 +20,7 @@ export function LauncherButton() {
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    let alive = true;
+    const alive = true;
     void ensureSession()
       .then((info) => {
         if (alive) setSignedIn(Boolean(info.isLoggedIn && info.webId));

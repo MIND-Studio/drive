@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Button } from "@mind-studio/ui";
+import Link from "next/link";
 
 export default function Landing() {
   return (
@@ -11,9 +11,8 @@ export default function Landing() {
         Your files, in your pod.
       </h1>
       <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-        Mind Drive is a Google Drive / Dropbox alternative where every byte
-        lives in your Solid Pod — your own storage, on your own terms. No
-        central server ever sees your files.
+        Mind Drive is a Google Drive / Dropbox alternative where every byte lives in your Solid Pod
+        — your own storage, on your own terms. No central server ever sees your files.
       </p>
       <div className="mt-10 flex flex-wrap gap-3">
         <Button asChild size="lg">
@@ -46,9 +45,7 @@ function Feature({ title, body }: { title: string; body: string }) {
   return (
     <div>
       <p className="text-lg font-semibold tracking-tight">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        {body}
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </div>
   );
 }

@@ -24,7 +24,11 @@ jobs:
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}
+      # Lint + format gate (Biome). Fails on errors; warnings are the
+      # documented legacy baseline tracked in biome.json.
+      - run: npx biome ci .
       - run: npx tsc --noEmit
+      - run: npm run test
       - run: npm run build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}

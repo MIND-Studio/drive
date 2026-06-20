@@ -1,30 +1,24 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import Link from "next/link";
-import { Button } from "@mind-studio/ui";
-import {
-  readFeedback,
-  setFeedbackStatus,
-  ensureFeedbackInbox,
-} from "@mind-studio/core/feedback";
 import type {
   FeedbackEntry,
-  Sentiment,
   FeedbackKind,
   FeedbackStatus,
+  Sentiment,
 } from "@mind-studio/core/feedback";
-import { FEEDBACK_STATUSES } from "@mind-studio/core/feedback";
+import {
+  ensureFeedbackInbox,
+  FEEDBACK_STATUSES,
+  readFeedback,
+  setFeedbackStatus,
+} from "@mind-studio/core/feedback";
+import { Button } from "@mind-studio/ui";
+import Link from "next/link";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { FeedbackBoard, STATUS_META, StatusControl } from "@/components/FeedbackBoard";
 import { feedbackInbox } from "@/lib/config";
 import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
 import { podFetch } from "@/lib/solid/pod-fs";
-import { FeedbackBoard, StatusControl, STATUS_META } from "@/components/FeedbackBoard";
 
 const FACE: Record<Sentiment, string> = { bad: "😞", meh: "😐", good: "🙂", love: "😍" };
 const KIND_ICON: Record<FeedbackKind, string> = {
@@ -120,31 +114,24 @@ export default function FeedbackInboxPage() {
   }, [ready, load]);
 
   // Owner-only triage write-back, optimistic with rollback on failure.
-  const updateStatus = useCallback(
-    async (entry: FeedbackEntry, next: FeedbackStatus) => {
-      if (entry.status === next) return;
-      const prev = entry.status;
-      setEntries((list) =>
-        list.map((e) => (e.url === entry.url ? { ...e, status: next } : e)),
-      );
-      setBusyUrls((s) => new Set(s).add(entry.url));
-      try {
-        await setFeedbackStatus(entry.url, next, podFetch());
-      } catch (err) {
-        setEntries((list) =>
-          list.map((e) => (e.url === entry.url ? { ...e, status: prev } : e)),
-        );
-        setError(`Couldn't update status: ${(err as Error).message}`);
-      } finally {
-        setBusyUrls((s) => {
-          const n = new Set(s);
-          n.delete(entry.url);
-          return n;
-        });
-      }
-    },
-    [],
-  );
+  const updateStatus = useCallback(async (entry: FeedbackEntry, next: FeedbackStatus) => {
+    if (entry.status === next) return;
+    const prev = entry.status;
+    setEntries((list) => list.map((e) => (e.url === entry.url ? { ...e, status: next } : e)));
+    setBusyUrls((s) => new Set(s).add(entry.url));
+    try {
+      await setFeedbackStatus(entry.url, next, podFetch());
+    } catch (err) {
+      setEntries((list) => list.map((e) => (e.url === entry.url ? { ...e, status: prev } : e)));
+      setError(`Couldn't update status: ${(err as Error).message}`);
+    } finally {
+      setBusyUrls((s) => {
+        const n = new Set(s);
+        n.delete(entry.url);
+        return n;
+      });
+    }
+  }, []);
 
   const stats = useMemo(() => {
     const bySentiment: Record<string, number> = {};
@@ -186,10 +173,7 @@ export default function FeedbackInboxPage() {
   }
 
   const activeFilters =
-    kindFilter !== "all" ||
-    sentFilter !== "all" ||
-    statusFilter !== "all" ||
-    query.trim() !== "";
+    kindFilter !== "all" || sentFilter !== "all" || statusFilter !== "all" || query.trim() !== "";
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
@@ -333,9 +317,7 @@ export default function FeedbackInboxPage() {
         // SPA-lands back here with the session intact.
         <div className="rounded-xl border border-dashed px-6 py-12 text-center">
           <div className="text-3xl">🔑</div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to read your feedback inbox.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">Sign in to read your feedback inbox.</p>
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">
             Only the inbox owner can read submissions.
           </p>
@@ -360,9 +342,7 @@ export default function FeedbackInboxPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed px-6 py-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            No matches for the current filters.
-          </p>
+          <p className="text-sm text-muted-foreground">No matches for the current filters.</p>
           <button
             type="button"
             onClick={() => {
@@ -563,9 +543,7 @@ function EntryCard({
         </span>
       </div>
 
-      {open && e.voiceNote && (
-        <audio src={e.voiceNote} controls className="mt-3 h-9 w-full" />
-      )}
+      {open && e.voiceNote && <audio src={e.voiceNote} controls className="mt-3 h-9 w-full" />}
 
       {open && hasDetail && (
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t pt-3 font-mono text-[10px] text-muted-foreground">
@@ -608,13 +586,10 @@ function EntryCard({
               <dd className="break-all">
                 🎯 {e.target.label}
                 <span className="opacity-60"> — {e.target.selector}</span>
-                {e.target.text ? (
-                  <span className="opacity-60"> · “{e.target.text}”</span>
-                ) : null}
+                {e.target.text ? <span className="opacity-60"> · “{e.target.text}”</span> : null}
                 <span className="opacity-50">
                   {" "}
-                  · {e.target.rect.w}×{e.target.rect.h} @ {e.target.rect.x},
-                  {e.target.rect.y}
+                  · {e.target.rect.w}×{e.target.rect.h} @ {e.target.rect.x},{e.target.rect.y}
                 </span>
               </dd>
             </>

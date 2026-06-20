@@ -28,9 +28,7 @@ function publicOrigin(req: Request): string {
   if (host) {
     const proto =
       h.get("x-forwarded-proto") ??
-      (host.includes("localhost") || host.includes("127.0.0.1")
-        ? "http"
-        : "https");
+      (host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https");
     return `${proto}://${host}`;
   }
   return new URL(req.url).origin;

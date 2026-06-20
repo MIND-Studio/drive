@@ -1,37 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button, Input } from "@mind-studio/ui";
+import { ArrowLeft, Download, Pencil, Share2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Input } from "@mind-studio/ui";
-import { Download, Share2, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import PassphraseDialog from "@/components/PassphraseDialog";
+import ShareDialog from "@/components/ShareDialog";
+import { driveRootFor, normalizeSegment } from "@/lib/config";
 import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
 import { currentIdentity } from "@/lib/solid/broker";
-import ShareDialog from "@/components/ShareDialog";
-import PassphraseDialog from "@/components/PassphraseDialog";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   decryptFile,
+  type EncryptedSidecar,
   getSessionPassphrase,
-  setSessionPassphrase,
   isEncryptedName,
   originalNameFromEnc,
+  setSessionPassphrase,
   sidecarUrlFor,
-  type EncryptedSidecar,
 } from "@/lib/solid/crypto";
-import { driveRootFor, normalizeSegment } from "@/lib/config";
-import {
-  readFileBlob,
-  unlink,
-  rename,
-  guessContentType,
-} from "@/lib/solid/pod-fs";
+import { guessContentType, readFileBlob, rename, unlink } from "@/lib/solid/pod-fs";
 
 type State =
   | { kind: "booting" }
   | { kind: "signed-out" }
   | { kind: "error"; message: string }
-  | { kind: "needs-passphrase"; sidecar: EncryptedSidecar; ciphertext: Blob; fileUrl: string; driveRoot: string; webId: string; error?: string }
+  | {
+      kind: "needs-passphrase";
+      sidecar: EncryptedSidecar;
+      ciphertext: Blob;
+      fileUrl: string;
+      driveRoot: string;
+      webId: string;
+      error?: string;
+    }
   | {
       kind: "ready";
       webId: string;
@@ -44,11 +47,7 @@ type State =
       decryptedName?: string;
     };
 
-export default function FilePreview({
-  pathSegments,
-}: {
-  pathSegments: string[];
-}) {
+export default function FilePreview({ pathSegments }: { pathSegments: string[] }) {
   const [state, setState] = useState<State>({ kind: "booting" });
 
   const load = useCallback(async () => {
@@ -60,8 +59,7 @@ export default function FilePreview({
       return;
     }
     const driveRoot = driveRootFor(id.podRoot);
-    const fileUrl =
-      driveRoot + pathSegments.map(normalizeSegment).join("/");
+    const fileUrl = driveRoot + pathSegments.map(normalizeSegment).join("/");
     const leaf = safeDecode(pathSegments[pathSegments.length - 1] ?? "");
     try {
       const blob = await readFileBlob(fileUrl);
@@ -195,24 +193,14 @@ export default function FilePreview({
   return (
     <Shell>
       <Crumbs pathSegments={pathSegments} />
-      <Header
-        state={state}
-        pathSegments={pathSegments}
-        onChanged={load}
-      />
-      <PreviewBody
-        blob={state.blob}
-        contentType={state.contentType}
-        fileUrl={state.fileUrl}
-      />
+      <Header state={state} pathSegments={pathSegments} onChanged={load} />
+      <PreviewBody blob={state.blob} contentType={state.contentType} fileUrl={state.fileUrl} />
     </Shell>
   );
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="mx-auto max-w-4xl px-6 py-10 sm:px-10">{children}</section>
-  );
+  return <section className="mx-auto max-w-4xl px-6 py-10 sm:px-10">{children}</section>;
 }
 
 function SignedOut() {
@@ -220,9 +208,7 @@ function SignedOut() {
   useEffect(() => rememberSignedOutPath(), []);
   return (
     <div className="rounded-lg border bg-card p-8 text-center">
-      <p className="text-2xl font-semibold tracking-tight">
-        Connect your pod to view files.
-      </p>
+      <p className="text-2xl font-semibold tracking-tight">Connect your pod to view files.</p>
       <Button asChild className="mt-6">
         <Link href="/connect">Connect a pod</Link>
       </Button>
@@ -232,9 +218,7 @@ function SignedOut() {
 
 function Crumbs({ pathSegments }: { pathSegments: string[] }) {
   const crumbs = useMemo(() => {
-    const acc: { label: string; href: string }[] = [
-      { label: "My Drive", href: "/drive" },
-    ];
+    const acc: { label: string; href: string }[] = [{ label: "My Drive", href: "/drive" }];
     for (let i = 0; i < pathSegments.length; i++) {
       const slice = pathSegments.slice(0, i + 1);
       const isFile = i === pathSegments.length - 1;
@@ -259,10 +243,7 @@ function Crumbs({ pathSegments }: { pathSegments: string[] }) {
             {isLast ? (
               <span className="font-mono text-sm text-foreground">{c.label}</span>
             ) : (
-              <Link
-                href={c.href}
-                className="text-muted-foreground hover:text-primary"
-              >
+              <Link href={c.href} className="text-muted-foreground hover:text-primary">
                 {c.label}
               </Link>
             )}
@@ -376,11 +357,9 @@ function Header({
             </Button>
           </form>
         ) : (
-          <h1
-            className="truncate text-3xl font-semibold tracking-tight"
-            data-testid="file-name"
-          >
-            {isEnc ? "🔒 " : ""}{fileName}
+          <h1 className="truncate text-3xl font-semibold tracking-tight" data-testid="file-name">
+            {isEnc ? "🔒 " : ""}
+            {fileName}
           </h1>
         )}
         <p className="mt-1 font-mono text-xs text-muted-foreground">
@@ -390,12 +369,7 @@ function Header({
       </div>
       {!renaming ? (
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={onDownload}
-            disabled={busy}
-            data-testid="file-download"
-          >
+          <Button size="sm" onClick={onDownload} disabled={busy} data-testid="file-download">
             <Download className="size-4" /> Download
           </Button>
           <Button
@@ -446,14 +420,7 @@ function Header({
   );
 }
 
-function PreviewBody({
-  blob,
-  contentType,
-}: {
-  blob: Blob;
-  contentType: string;
-  fileUrl: string;
-}) {
+function PreviewBody({ blob, contentType }: { blob: Blob; contentType: string; fileUrl: string }) {
   const [textBody, setTextBody] = useState<string | null>(null);
   // The object URL MUST be created inside the effect, not via useMemo. In
   // React 18 dev Strict Mode, effects run twice (mount → cleanup → remount).
@@ -491,9 +458,7 @@ function PreviewBody({
   }, [blob, contentType]);
 
   if (!objectUrl) {
-    return (
-      <p className="mt-6 text-sm text-muted-foreground">Loading preview…</p>
-    );
+    return <p className="mt-6 text-sm text-muted-foreground">Loading preview…</p>;
   }
 
   if (contentType === "image/svg+xml") {
@@ -557,21 +522,12 @@ function PreviewBody({
   }
 
   if (contentType.startsWith("audio/")) {
-    return (
-      <audio
-        controls
-        src={objectUrl}
-        className="mt-6 w-full"
-        data-testid="preview-audio"
-      />
-    );
+    return <audio controls src={objectUrl} className="mt-6 w-full" data-testid="preview-audio" />;
   }
 
   if (isText(contentType)) {
     if (textBody == null)
-      return (
-        <p className="mt-6 text-sm text-muted-foreground">Loading text…</p>
-      );
+      return <p className="mt-6 text-sm text-muted-foreground">Loading text…</p>;
     return (
       <pre
         className="mt-6 max-h-[70vh] overflow-auto rounded-lg border bg-muted/40 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap"
