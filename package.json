@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3060",
+    "gen:icons": "node scripts/gen-icons.mjs",
     "build": "next build",
     "start": "next start -p 3060",
     "seed:demo": "tsx scripts/seed-demo.ts",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5",
