@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/MIND-Studio/drive/compare/v0.3.1...v0.4.0) (2026-06-21)
+
+
+### Features
+
+* adopt brand lockup + canonical icons (ui[#29](https://github.com/MIND-Studio/drive/issues/29) wave 2) ([#17](https://github.com/MIND-Studio/drive/issues/17)) ([874a4a4](https://github.com/MIND-Studio/drive/commit/874a4a4796b03ff409373b023dcd62dd7d9b16bc))
+
 ## [0.3.1](https://github.com/MIND-Studio/drive/compare/v0.3.0...v0.3.1) (2026-06-21)
 
 
