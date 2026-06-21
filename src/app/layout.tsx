@@ -1,4 +1,4 @@
-import { Button, ThemeProvider, Toaster } from "@mind-studio/ui";
+import { Button, Logo, ThemeProvider, Toaster } from "@mind-studio/ui";
 import { mind } from "@mind-studio/ui/themes";
 import type { Metadata } from "next";
 import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
@@ -67,8 +67,8 @@ function Masthead() {
   return (
     <header className="border-b bg-card">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-8 px-6 py-4 sm:px-10">
-        <Link href="/" className="flex items-baseline gap-3">
-          <span className="text-2xl font-semibold tracking-tight">Mind Drive</span>
+        <Link href="/" className="flex items-center gap-3">
+          <Logo label="Drive" />
           <span className="hidden text-[10px] uppercase tracking-[0.22em] text-muted-foreground sm:inline">
             <span className="text-primary">●</span> files in your pod
           </span>
@@ -92,7 +92,7 @@ function Colophon() {
   return (
     <footer className="mt-16 border-t bg-muted/40">
       <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-        <p className="text-2xl font-semibold tracking-tight">Mind Drive</p>
+        <Logo label="Drive" />
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
           A prototype that treats your Solid Pod as a real Drive. No central server holds your
           bytes. Sibling of Mind Market, Codespaces, OS, and Social Network.
