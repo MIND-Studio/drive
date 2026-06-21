@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/MIND-Studio/drive/compare/v0.3.0...v0.3.1) (2026-06-21)
+
+
+### Bug Fixes
+
+* **color:** use the ui 0.5.0 warning token for the passphrase notice ([#13](https://github.com/MIND-Studio/drive/issues/13)) ([cb50182](https://github.com/MIND-Studio/drive/commit/cb50182e863084f872c327ad9d25c93bae57e731))
+
 ## [0.3.0](https://github.com/MIND-Studio/drive/compare/v0.2.2...v0.3.0) (2026-06-20)
 
 
