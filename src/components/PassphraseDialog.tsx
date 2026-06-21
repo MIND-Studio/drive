@@ -100,7 +100,7 @@ export default function PassphraseDialog({
           </DialogFooter>
         </form>
         {confirmRequired ? (
-          <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-muted-foreground">
+          <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-muted-foreground">
             <strong className="text-foreground">Heads up:</strong> there is no recovery. If you lose
             this passphrase, the encrypted files are unrecoverable.
           </p>
