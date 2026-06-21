@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
@@ -462,7 +463,7 @@ function Toolbar({
       setCreatingFolder(false);
       onChanged();
     } catch (err) {
-      alert(`Failed to create folder: ${String(err)}`);
+      toast.error(`Failed to create folder: ${String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -725,7 +726,7 @@ function Tile({
       }
       onChanged();
     } catch (err) {
-      alert(`Delete failed: ${String(err)}`);
+      toast.error(`Delete failed: ${String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -822,7 +823,7 @@ function Row({
       }
       onChanged();
     } catch (err) {
-      alert(`Delete failed: ${String(err)}`);
+      toast.error(`Delete failed: ${String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -843,7 +844,7 @@ function Row({
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
-      alert(`Download failed: ${String(err)}`);
+      toast.error(`Download failed: ${String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -858,7 +859,7 @@ function Row({
       return;
     }
     if (entry.kind === "container") {
-      alert("Container rename is not supported in M2 — copy/recreate manually.");
+      toast.error("Container rename is not supported in M2 — copy/recreate manually.");
       setRenaming(false);
       return;
     }
@@ -870,7 +871,7 @@ function Row({
       setRenaming(false);
       onChanged();
     } catch (err) {
-      alert(`Rename failed: ${String(err)}`);
+      toast.error(`Rename failed: ${String(err)}`);
     } finally {
       setBusy(false);
     }

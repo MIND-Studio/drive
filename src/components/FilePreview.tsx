@@ -5,6 +5,7 @@ import { ArrowLeft, Download, Pencil, Share2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import ShareDialog from "@/components/ShareDialog";
@@ -299,7 +300,7 @@ function Header({
           : "/drive/" + parentSegments.map(normalizeSegment).join("/");
       router.replace(parentHref);
     } catch (e) {
-      alert(`Delete failed: ${String(e)}`);
+      toast.error(`Delete failed: ${String(e)}`);
       setBusy(false);
     }
   }
@@ -323,7 +324,7 @@ function Header({
         [...parentSegments.map(normalizeSegment), encodeURIComponent(trimmed)].join("/");
       router.replace(href);
     } catch (err) {
-      alert(`Rename failed: ${String(err)}`);
+      toast.error(`Rename failed: ${String(err)}`);
       setBusy(false);
     }
   }
