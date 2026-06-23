@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/MIND-Studio/drive/compare/v0.4.0...v0.5.0) (2026-06-23)
+
+
+### Features
+
+* encrypted-file vault, sandbox-safe IO, share links, folder upload ([#19](https://github.com/MIND-Studio/drive/issues/19)) ([afeb5e8](https://github.com/MIND-Studio/drive/commit/afeb5e81258a35ec00a9e39d15af1facadc5499f))
+
 ## [0.4.0](https://github.com/MIND-Studio/drive/compare/v0.3.1...v0.4.0) (2026-06-21)
 
 
