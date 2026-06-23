@@ -14,7 +14,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@mind-studio/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { copyText } from "@/lib/clipboard";
 import { getAgentAccess, getPublicAccess, setAgentRead, setPublicRead } from "@/lib/solid/access";
 
 type Tab = "webid" | "public";
@@ -23,11 +24,31 @@ export default function ShareDialog({
   resourceUrl,
   resourceName,
   onClose,
+  sidecarUrl,
+  shareLink,
+  isEncrypted = false,
 }: {
   resourceUrl: string;
   resourceName: string;
   onClose: () => void;
+  /**
+   * For encrypted files: the `.enc.json` sidecar. Access grants/revocations are
+   * applied to it alongside the ciphertext, so a recipient can fetch what they
+   * need to decrypt. Omitted for plaintext files.
+   */
+  sidecarUrl?: string;
+  /**
+   * The URL surfaced as the public "shareable link". For encrypted files this
+   * is the in-app viewer URL (which prompts for the passphrase) rather than the
+   * raw ciphertext URL. Defaults to {@link resourceUrl}.
+   */
+  shareLink?: string;
+  isEncrypted?: boolean;
 }) {
+  // Encrypted files share both the ciphertext and its sidecar.
+  const targets = isEncrypted && sidecarUrl ? [resourceUrl, sidecarUrl] : [resourceUrl];
+  const linkToShare = shareLink ?? resourceUrl;
+  const linkRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("webid");
   const [webId, setWebId] = useState("");
   const [grantedWebIds, setGrantedWebIds] = useState<string[]>([]);
@@ -62,7 +83,7 @@ export default function ShareDialog({
     }
     setBusy(true);
     try {
-      await setAgentRead(resourceUrl, trimmed, true);
+      for (const t of targets) await setAgentRead(t, trimmed, true);
       const probe = await getAgentAccess(resourceUrl, trimmed);
       if (probe?.read) {
         setGrantedWebIds((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
@@ -83,7 +104,7 @@ export default function ShareDialog({
     setConfirmation(null);
     setBusy(true);
     try {
-      await setAgentRead(resourceUrl, target, false);
+      for (const t of targets) await setAgentRead(t, target, false);
       setGrantedWebIds((prev) => prev.filter((w) => w !== target));
       setConfirmation(`Revoked ${target}`);
     } catch (err) {
@@ -98,7 +119,7 @@ export default function ShareDialog({
     setConfirmation(null);
     setBusy(true);
     try {
-      await setPublicRead(resourceUrl, next);
+      for (const t of targets) await setPublicRead(t, next);
       const probe = await getPublicAccess(resourceUrl);
       setPublicReadState(Boolean(probe?.read));
       setConfirmation(next ? "Now publicly readable" : "Public access revoked");
@@ -110,12 +131,18 @@ export default function ShareDialog({
   }
 
   async function onCopyLink() {
-    try {
-      await navigator.clipboard.writeText(resourceUrl);
+    setError(null);
+    const ok = await copyText(linkToShare);
+    if (ok) {
       setCopyMsg("Copied!");
       setTimeout(() => setCopyMsg(null), 2000);
-    } catch (err) {
-      setError(`Copy failed: ${String(err)}`);
+    } else {
+      // Both the Clipboard API and execCommand are blocked — leave the link
+      // selected so the user can copy it by hand.
+      linkRef.current?.focus();
+      linkRef.current?.select();
+      setCopyMsg("Press ⌘C / Ctrl+C to copy");
+      setTimeout(() => setCopyMsg(null), 4000);
     }
   }
 
@@ -218,18 +245,30 @@ export default function ShareDialog({
                     <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                       Shareable URL
                     </p>
-                    <p className="mt-2 break-all font-mono text-xs" data-testid="share-public-url">
-                      {resourceUrl}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onCopyLink}
-                      className="mt-2"
-                      data-testid="share-public-copy"
-                    >
-                      {copyMsg ?? "Copy"}
-                    </Button>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input
+                        ref={linkRef}
+                        readOnly
+                        value={linkToShare}
+                        onFocus={(e) => e.currentTarget.select()}
+                        className="h-8 flex-1 font-mono text-xs"
+                        data-testid="share-public-url"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onCopyLink}
+                        data-testid="share-public-copy"
+                      >
+                        {copyMsg ?? "Copy"}
+                      </Button>
+                    </div>
+                    {isEncrypted ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        This file is encrypted. The link opens it in the viewer — the recipient
+                        needs the passphrase you set to decrypt it.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
