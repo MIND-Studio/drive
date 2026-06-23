@@ -10,6 +10,8 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import ShareDialog from "@/components/ShareDialog";
 import { driveRootFor, normalizeSegment } from "@/lib/config";
+import { saveBlob } from "@/lib/download";
+import { splitExt } from "@/lib/filename";
 import { ensureSession, rememberSignedOutPath } from "@/lib/solid/auth";
 import { currentIdentity } from "@/lib/solid/broker";
 import {
@@ -21,7 +23,8 @@ import {
   setSessionPassphrase,
   sidecarUrlFor,
 } from "@/lib/solid/crypto";
-import { guessContentType, readFileBlob, rename, unlink } from "@/lib/solid/pod-fs";
+import { renameFile } from "@/lib/solid/file-ops";
+import { guessContentType, readFileBlob, unlink } from "@/lib/solid/pod-fs";
 
 type State =
   | { kind: "booting" }
@@ -48,20 +51,36 @@ type State =
       decryptedName?: string;
     };
 
-export default function FilePreview({ pathSegments }: { pathSegments: string[] }) {
+export default function FilePreview({
+  pathSegments,
+  srcUrl,
+}: {
+  pathSegments: string[];
+  /**
+   * Absolute pod URL of a file to view, from a `?src=` share link. When set,
+   * the viewer reads THIS resource (which may live in someone else's pod)
+   * instead of deriving the path from the signed-in user's own drive, and does
+   * not require a session — public resources fetch anonymously. The header is
+   * read-only in this mode (no rename/share/delete of a file you don't own).
+   */
+  srcUrl?: string;
+}) {
   const [state, setState] = useState<State>({ kind: "booting" });
 
   const load = useCallback(async () => {
     // Identity is brokered-first: inside the Mind shell it's the shell's webId +
     // workspace pod root (no local session); standalone it's the OIDC session.
     const id = currentIdentity();
-    if (!id) {
+    if (!srcUrl && !id) {
       setState({ kind: "signed-out" });
       return;
     }
-    const driveRoot = driveRootFor(id.podRoot);
-    const fileUrl = driveRoot + pathSegments.map(normalizeSegment).join("/");
-    const leaf = safeDecode(pathSegments[pathSegments.length - 1] ?? "");
+    const driveRoot = id ? driveRootFor(id.podRoot) : "";
+    const fileUrl = srcUrl ?? driveRoot + pathSegments.map(normalizeSegment).join("/");
+    const webId = id?.webId ?? "";
+    const leaf = safeDecode(
+      srcUrl ? (srcUrl.split("/").pop() ?? "") : (pathSegments[pathSegments.length - 1] ?? ""),
+    );
     try {
       const blob = await readFileBlob(fileUrl);
       if (isEncryptedName(leaf)) {
@@ -76,7 +95,7 @@ export default function FilePreview({ pathSegments }: { pathSegments: string[] }
             ciphertext: blob,
             fileUrl,
             driveRoot,
-            webId: id.webId,
+            webId,
           });
           return;
         }
@@ -84,7 +103,7 @@ export default function FilePreview({ pathSegments }: { pathSegments: string[] }
           const plaintext = await decryptFile(passphrase, blob, sidecar);
           setState({
             kind: "ready",
-            webId: id.webId,
+            webId,
             driveRoot,
             fileUrl,
             blob: plaintext,
@@ -99,7 +118,7 @@ export default function FilePreview({ pathSegments }: { pathSegments: string[] }
             ciphertext: blob,
             fileUrl,
             driveRoot,
-            webId: id.webId,
+            webId,
             error: String(e),
           });
         }
@@ -108,7 +127,7 @@ export default function FilePreview({ pathSegments }: { pathSegments: string[] }
       const contentType = blob.type || guessContentType(leaf);
       setState({
         kind: "ready",
-        webId: id.webId,
+        webId,
         driveRoot,
         fileUrl,
         blob,
@@ -118,7 +137,7 @@ export default function FilePreview({ pathSegments }: { pathSegments: string[] }
     } catch (e) {
       setState({ kind: "error", message: String(e) });
     }
-  }, [pathSegments]);
+  }, [pathSegments, srcUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,7 +213,7 @@ export default function FilePreview({ pathSegments }: { pathSegments: string[] }
   return (
     <Shell>
       <Crumbs pathSegments={pathSegments} />
-      <Header state={state} pathSegments={pathSegments} onChanged={load} />
+      <Header state={state} pathSegments={pathSegments} onChanged={load} readOnly={!!srcUrl} />
       <PreviewBody blob={state.blob} contentType={state.contentType} fileUrl={state.fileUrl} />
     </Shell>
   );
@@ -258,41 +277,36 @@ function Crumbs({ pathSegments }: { pathSegments: string[] }) {
 function Header({
   state,
   pathSegments,
+  readOnly = false,
 }: {
   state: Extract<State, { kind: "ready" }>;
   pathSegments: string[];
   onChanged: () => void;
+  /** True when viewing via a `?src=` share link — hide owner-only actions. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const urlLeaf = safeDecode(pathSegments[pathSegments.length - 1] ?? "");
   const fileName = state.decryptedName ?? urlLeaf;
   const isEnc = !!state.decryptedName;
+  // Renames edit the base name only; the extension is locked so a rename can't
+  // change the file format.
+  const { base, ext } = splitExt(fileName);
   const [busy, setBusy] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [newName, setNewName] = useState(fileName);
+  const [newBase, setNewBase] = useState(base);
   const [sharing, setSharing] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function onDownload() {
-    setBusy(true);
-    try {
-      const url = URL.createObjectURL(state.blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } finally {
-      setBusy(false);
-    }
+  function onDownload() {
+    saveBlob(state.blob, fileName);
   }
 
   async function doDelete() {
     setBusy(true);
     try {
       await unlink(state.fileUrl);
+      if (isEnc) await unlink(sidecarUrlFor(state.fileUrl)).catch(() => {});
       const parentSegments = pathSegments.slice(0, -1);
       const parentHref =
         parentSegments.length === 0
@@ -307,27 +321,33 @@ function Header({
 
   async function onRenameSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = newName.trim();
-    if (!trimmed || trimmed === fileName) {
+    const nextDisplay = newBase.trim() + ext;
+    if (!newBase.trim() || nextDisplay === fileName) {
       setRenaming(false);
-      setNewName(fileName);
+      setNewBase(base);
       return;
     }
     setBusy(true);
     try {
-      const parent = state.fileUrl.slice(0, state.fileUrl.lastIndexOf("/") + 1);
-      const target = parent + encodeURIComponent(trimmed);
-      await rename(state.fileUrl, target);
+      await renameFile({ fromUrl: state.fileUrl, newDisplayName: nextDisplay });
+      const onPodLeaf = isEnc ? `${nextDisplay}.enc` : nextDisplay;
       const parentSegments = pathSegments.slice(0, -1);
       const href =
         "/drive/file/" +
-        [...parentSegments.map(normalizeSegment), encodeURIComponent(trimmed)].join("/");
+        [...parentSegments.map(normalizeSegment), encodeURIComponent(onPodLeaf)].join("/");
       router.replace(href);
     } catch (err) {
       toast.error(`Rename failed: ${String(err)}`);
       setBusy(false);
     }
   }
+
+  // Encrypted shares hand the recipient the in-app viewer link (which prompts
+  // for the passphrase) plus access to the sidecar, not the raw ciphertext URL.
+  const viewerShareLink =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}?src=${encodeURIComponent(state.fileUrl)}`
+      : undefined;
 
   return (
     <div className="mt-4 flex flex-wrap items-start justify-between gap-4 border-b pb-4">
@@ -337,11 +357,14 @@ function Header({
             <Input
               type="text"
               autoFocus
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+              value={newBase}
+              onChange={(e) => setNewBase(e.target.value)}
               className="h-9 flex-1"
               data-testid="file-rename-input"
             />
+            {ext ? (
+              <span className="shrink-0 font-mono text-sm text-muted-foreground">{ext}</span>
+            ) : null}
             <Button type="submit" size="sm" disabled={busy}>
               Save
             </Button>
@@ -351,7 +374,7 @@ function Header({
               variant="outline"
               onClick={() => {
                 setRenaming(false);
-                setNewName(fileName);
+                setNewBase(base);
               }}
             >
               Cancel
@@ -373,34 +396,38 @@ function Header({
           <Button size="sm" onClick={onDownload} disabled={busy} data-testid="file-download">
             <Download className="size-4" /> Download
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setSharing(true)}
-            disabled={busy}
-            data-testid="file-share"
-          >
-            <Share2 className="size-4" /> Share
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setRenaming(true)}
-            disabled={busy}
-            data-testid="file-rename"
-          >
-            <Pencil className="size-4" /> Rename
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setConfirmOpen(true)}
-            disabled={busy}
-            className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            data-testid="file-delete"
-          >
-            <Trash2 className="size-4" /> Delete
-          </Button>
+          {!readOnly ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSharing(true)}
+                disabled={busy}
+                data-testid="file-share"
+              >
+                <Share2 className="size-4" /> Share
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setRenaming(true)}
+                disabled={busy}
+                data-testid="file-rename"
+              >
+                <Pencil className="size-4" /> Rename
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setConfirmOpen(true)}
+                disabled={busy}
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                data-testid="file-delete"
+              >
+                <Trash2 className="size-4" /> Delete
+              </Button>
+            </>
+          ) : null}
         </div>
       ) : null}
       {sharing ? (
@@ -408,6 +435,9 @@ function Header({
           resourceUrl={state.fileUrl}
           resourceName={fileName}
           onClose={() => setSharing(false)}
+          isEncrypted={isEnc}
+          sidecarUrl={isEnc ? sidecarUrlFor(state.fileUrl) : undefined}
+          shareLink={isEnc ? viewerShareLink : undefined}
         />
       ) : null}
       <ConfirmDialog

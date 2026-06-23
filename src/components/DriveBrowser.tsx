@@ -2,9 +2,12 @@
 
 import { Button, Checkbox, Input, ToggleGroup, ToggleGroupItem } from "@mind-studio/ui";
 import {
+  ChevronRight,
   Download,
   Folder,
   FolderPlus,
+  HardDrive,
+  KeyRound,
   LayoutGrid,
   List as ListIcon,
   Pencil,
@@ -19,7 +22,10 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import PassphraseDialog from "@/components/PassphraseDialog";
 import { ImageThumbnail, isImageName } from "@/components/Thumbnail";
+import VaultDialog from "@/components/VaultDialog";
 import { driveRootFor, normalizeSegment } from "@/lib/config";
+import { saveBlob } from "@/lib/download";
+import { splitExt } from "@/lib/filename";
 import { ensureSession, isEmbedded, rememberSignedOutPath } from "@/lib/solid/auth";
 import { currentIdentity, isBrokered, signalReady } from "@/lib/solid/broker";
 import {
@@ -30,16 +36,17 @@ import {
   setSessionPassphrase,
   sidecarUrlFor,
 } from "@/lib/solid/crypto";
+import { renameFile } from "@/lib/solid/file-ops";
 import {
   guessContentType,
   mkdir,
   type PodEntry,
   podFetch,
   readdir,
-  rename,
   rmrf,
   writeFileBlob,
 } from "@/lib/solid/pod-fs";
+import { addVaultEntries, isVaultName, type VaultEntry } from "@/lib/solid/vault";
 
 type State =
   | { kind: "booting" }
@@ -76,8 +83,10 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
   const [encryptUploads, setEncryptUploads] = useState(false);
   const [passphrasePrompt, setPassphrasePrompt] = useState<null | {
     pendingFiles: File[];
+    targetUrl: string;
     confirmRequired: boolean;
   }>(null);
+  const [vaultOpen, setVaultOpen] = useState(false);
   /**
    * Sticky upload-error banner. Lives outside `state` so the `finally`-block
    * refresh() in uploadFiles doesn't wipe it. Cleared on the next successful
@@ -160,14 +169,21 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
   }, [refresh]);
 
   const uploadFiles = useCallback(
-    async (files: File[]) => {
+    async (files: File[], targetUrl?: string) => {
       if (state.kind !== "ready" || files.length === 0) return;
+      // targetUrl lets a drop onto a folder row upload INTO that folder; it
+      // defaults to the folder currently being browsed.
+      const containerUrl = targetUrl ?? state.containerUrl;
 
       if (encryptUploads && !getSessionPassphrase()) {
         // First encrypted upload of this session — collect a passphrase
         // before doing anything. The confirm-required flow doubles as a
         // typo guard since there's no recovery.
-        setPassphrasePrompt({ pendingFiles: files, confirmRequired: true });
+        setPassphrasePrompt({
+          pendingFiles: files,
+          targetUrl: containerUrl,
+          confirmRequired: true,
+        });
         return;
       }
 
@@ -179,6 +195,7 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
       setUploadProgress(startProgress);
       setUploadError(null);
       let failed = false;
+      const vaultEntries: VaultEntry[] = [];
       try {
         for (let i = 0; i < files.length; i++) {
           const f = files[i];
@@ -186,21 +203,40 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
             const passphrase = getSessionPassphrase();
             if (!passphrase) throw new Error("Missing session passphrase");
             const { ciphertext, sidecar } = await encryptFile(passphrase, f, f.name);
-            const encUrl = state.containerUrl + encodeURIComponent(f.name) + ".enc";
+            const encUrl = containerUrl + encodeURIComponent(f.name) + ".enc";
             const metaUrl = sidecarUrlFor(encUrl);
             await writeFileBlob(encUrl, ciphertext, "application/octet-stream");
             const sidecarBlob = new Blob([JSON.stringify(sidecar)], {
               type: "application/json",
             });
             await writeFileBlob(metaUrl, sidecarBlob, "application/json");
+            vaultEntries.push({
+              fileUrl: encUrl,
+              name: f.name,
+              passphrase,
+              addedAt: new Date().toISOString(),
+            });
           } else {
-            const url = state.containerUrl + encodeURIComponent(f.name);
+            const url = containerUrl + encodeURIComponent(f.name);
             const contentType = f.type || guessContentType(f.name);
             await writeFileBlob(url, f, contentType);
           }
           setUploadProgress((prev) =>
             prev.map((p, idx) => (idx === i ? { ...p, done: p.total } : p)),
           );
+        }
+        // Record encrypted uploads in the in-pod vault so their passphrase is
+        // recoverable and they're searchable there. Best-effort: a vault write
+        // failure must never fail the upload itself.
+        if (vaultEntries.length > 0) {
+          const passphrase = getSessionPassphrase();
+          if (passphrase) {
+            try {
+              await addVaultEntries(state.driveRoot, passphrase, vaultEntries);
+            } catch (err) {
+              console.warn("vault update failed", err);
+            }
+          }
         }
       } catch (e) {
         failed = true;
@@ -241,11 +277,7 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
 
   return (
     <Shell>
-      <Crumbs
-        driveRoot={state.driveRoot}
-        containerUrl={state.containerUrl}
-        pathSegments={pathSegments}
-      />
+      <Crumbs pathSegments={pathSegments} />
       <Toolbar
         containerUrl={state.containerUrl}
         onChanged={refresh}
@@ -256,6 +288,7 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
         onSearchChange={setSearchQuery}
         encryptUploads={encryptUploads}
         onEncryptUploadsChange={setEncryptUploads}
+        onOpenVault={() => setVaultOpen(true)}
       />
       {uploadProgress.length > 0 ? <UploadProgress items={uploadProgress} /> : null}
       {uploadError ? (
@@ -285,10 +318,11 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
       ) : null}
       <Dropzone onDrop={uploadFiles}>
         <Listing
-          entries={filterEntries(hideEncryptedSidecars(state.entries), searchQuery)}
+          entries={filterEntries(hideInternalFiles(state.entries), searchQuery)}
           driveRoot={state.driveRoot}
           containerUrl={state.containerUrl}
           onChanged={refresh}
+          onUploadToFolder={(url, files) => uploadFiles(files, url)}
           viewMode={viewMode}
           searchQuery={searchQuery}
         />
@@ -300,13 +334,16 @@ export default function DriveBrowser({ pathSegments }: { pathSegments: string[] 
           confirmRequired={passphrasePrompt.confirmRequired}
           onSubmit={(p) => {
             setSessionPassphrase(p);
-            const files = passphrasePrompt.pendingFiles;
+            const { pendingFiles, targetUrl } = passphrasePrompt;
             setPassphrasePrompt(null);
             // re-trigger upload now that we have a passphrase
-            void uploadFiles(files);
+            void uploadFiles(pendingFiles, targetUrl);
           }}
           onCancel={() => setPassphrasePrompt(null)}
         />
+      ) : null}
+      {vaultOpen ? (
+        <VaultDialog driveRoot={state.driveRoot} onClose={() => setVaultOpen(false)} />
       ) : null}
     </Shell>
   );
@@ -320,11 +357,12 @@ function safeDecode(s: string): string {
   }
 }
 
-function hideEncryptedSidecars(entries: PodEntry[]): PodEntry[] {
-  // The .enc.json sidecars are an implementation detail; surfacing them in
-  // the listing would be confusing. The matching .enc rows already carry
-  // a 🔒 in their icon.
-  return entries.filter((e) => !e.name.endsWith(".enc.json"));
+function hideInternalFiles(entries: PodEntry[]): PodEntry[] {
+  // The .enc.json sidecars and the encrypted vault file are implementation
+  // details; surfacing them in the listing would be confusing. The matching
+  // .enc rows already carry a 🔒 in their icon; the vault lives behind its
+  // own dialog.
+  return entries.filter((e) => !e.name.endsWith(".enc.json") && !isVaultName(safeDecode(e.name)));
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -379,15 +417,7 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-function Crumbs({
-  driveRoot,
-  containerUrl,
-  pathSegments,
-}: {
-  driveRoot: string;
-  containerUrl: string;
-  pathSegments: string[];
-}) {
+function Crumbs({ pathSegments }: { pathSegments: string[] }) {
   const crumbs = useMemo(() => {
     const acc: { label: string; href: string }[] = [{ label: "My Drive", href: "/drive" }];
     for (let i = 0; i < pathSegments.length; i++) {
@@ -400,28 +430,34 @@ function Crumbs({
     return acc;
   }, [pathSegments]);
 
+  const trail = crumbs.slice(0, -1);
+  const current = crumbs[crumbs.length - 1];
+  const atRoot = trail.length === 0;
+
   return (
-    <div className="flex items-center justify-between">
-      <nav className="flex flex-wrap items-center gap-1 text-sm" aria-label="Breadcrumb">
-        {crumbs.map((c, i) => {
-          const isLast = i === crumbs.length - 1;
-          return (
-            <span key={c.href} className="flex items-center gap-1">
-              {i > 0 ? <span className="text-muted-foreground">/</span> : null}
-              {isLast ? (
-                <span className="text-2xl font-semibold tracking-tight">{c.label}</span>
-              ) : (
-                <Link href={c.href} className="text-muted-foreground hover:text-primary">
-                  {c.label}
-                </Link>
-              )}
+    <div className="space-y-1.5">
+      {trail.length > 0 ? (
+        <nav
+          className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+          aria-label="Breadcrumb"
+        >
+          {trail.map((c, i) => (
+            <span key={c.href} className="flex items-center gap-1.5">
+              {i > 0 ? <ChevronRight className="size-3 opacity-50" /> : null}
+              <Link href={c.href} className="transition-colors hover:text-foreground">
+                {c.label}
+              </Link>
             </span>
-          );
-        })}
-      </nav>
-      <p className="hidden font-mono text-xs text-muted-foreground sm:block" title={containerUrl}>
-        {containerUrl.replace(driveRoot, "/")}
-      </p>
+          ))}
+          <ChevronRight className="size-3 opacity-50" />
+        </nav>
+      ) : null}
+      <div className="flex items-center gap-2.5">
+        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          {atRoot ? <HardDrive className="size-4" /> : <Folder className="size-4" />}
+        </span>
+        <h1 className="truncate text-2xl font-semibold tracking-tight">{current.label}</h1>
+      </div>
     </div>
   );
 }
@@ -436,6 +472,7 @@ function Toolbar({
   onSearchChange,
   encryptUploads,
   onEncryptUploadsChange,
+  onOpenVault,
 }: {
   containerUrl: string;
   onChanged: () => void;
@@ -446,6 +483,7 @@ function Toolbar({
   onSearchChange: (q: string) => void;
   encryptUploads: boolean;
   onEncryptUploadsChange: (v: boolean) => void;
+  onOpenVault: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
@@ -531,6 +569,15 @@ function Toolbar({
         />
         <span>🔒 Encrypt uploads</span>
       </label>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={onOpenVault}
+        data-testid="vault-button"
+        title="Passphrases for your encrypted files"
+      >
+        <KeyRound className="size-4" /> Vault
+      </Button>
       <div className="ml-auto flex items-center gap-2">
         <Input
           type="search"
@@ -636,6 +683,7 @@ function Listing({
   driveRoot,
   containerUrl,
   onChanged,
+  onUploadToFolder,
   viewMode,
   searchQuery,
 }: {
@@ -643,6 +691,7 @@ function Listing({
   driveRoot: string;
   containerUrl: string;
   onChanged: () => void;
+  onUploadToFolder: (containerUrl: string, files: File[]) => void;
   viewMode: ViewMode;
   searchQuery: string;
 }) {
@@ -680,6 +729,7 @@ function Listing({
             driveRoot={driveRoot}
             containerUrl={containerUrl}
             onChanged={onChanged}
+            onUploadToFolder={onUploadToFolder}
           />
         ))}
       </ul>
@@ -694,27 +744,71 @@ function Listing({
           driveRoot={driveRoot}
           containerUrl={containerUrl}
           onChanged={onChanged}
+          onUploadToFolder={onUploadToFolder}
         />
       ))}
     </ul>
   );
 }
 
+/**
+ * Drag-and-drop handlers that let a folder row/tile accept files dropped onto
+ * it, uploading INTO that folder. We stop propagation so the page-level
+ * Dropzone (which uploads to the current folder) doesn't also fire. Non-folder
+ * entries opt out, letting the event bubble to the page Dropzone.
+ */
+function useFolderDrop(
+  isFolder: boolean,
+  folderUrl: string,
+  onUploadToFolder: (containerUrl: string, files: File[]) => void,
+) {
+  const [over, setOver] = useState(false);
+  if (!isFolder) return { over: false, handlers: {} as Record<string, never> };
+  return {
+    over,
+    handlers: {
+      onDragOver: (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setOver(true);
+      },
+      onDragLeave: (e: React.DragEvent) => {
+        if (e.currentTarget === e.target) setOver(false);
+      },
+      onDrop: (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setOver(false);
+        if (e.dataTransfer.files.length > 0) {
+          onUploadToFolder(folderUrl, Array.from(e.dataTransfer.files));
+        }
+      },
+    },
+  };
+}
+
 function Tile({
   entry,
   driveRoot,
   onChanged,
+  onUploadToFolder,
 }: {
   entry: PodEntry;
   driveRoot: string;
   containerUrl: string;
   onChanged: () => void;
+  onUploadToFolder: (containerUrl: string, files: File[]) => void;
 }) {
   const relPath = entry.url.slice(driveRoot.length);
   const href =
     entry.kind === "container" ? "/drive/" + relPath.replace(/\/$/, "") : "/drive/file/" + relPath;
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { over: dropOver, handlers: dropHandlers } = useFolderDrop(
+    entry.kind === "container",
+    entry.url,
+    onUploadToFolder,
+  );
   async function doDelete() {
     setBusy(true);
     try {
@@ -734,7 +828,10 @@ function Tile({
   const isContainer = entry.kind === "container";
   return (
     <li
-      className="group relative overflow-hidden rounded-md border bg-card transition-colors hover:border-primary"
+      {...dropHandlers}
+      className={`group relative overflow-hidden rounded-md border bg-card transition-colors hover:border-primary ${
+        dropOver ? "border-primary ring-2 ring-primary" : ""
+      }`}
       data-testid={`tile-${entry.name}`}
     >
       <Link href={href} className="block">
@@ -797,20 +894,34 @@ function Row({
   entry,
   driveRoot,
   onChanged,
+  onUploadToFolder,
 }: {
   entry: PodEntry;
   driveRoot: string;
   containerUrl: string;
   onChanged: () => void;
+  onUploadToFolder: (containerUrl: string, files: File[]) => void;
 }) {
   const relPath = entry.url.slice(driveRoot.length);
   const href =
     entry.kind === "container" ? "/drive/" + relPath.replace(/\/$/, "") : "/drive/file/" + relPath;
+  const isContainer = entry.kind === "container";
+  // The user-facing name (decoded; encrypted files show their original name).
+  const displayedName = isEncryptedName(safeDecode(entry.name))
+    ? originalNameFromEnc(safeDecode(entry.name))
+    : safeDecode(entry.name);
+  // Renames edit the base only; the extension is locked so the format can't change.
+  const { base, ext } = splitExt(displayedName);
   const [busy, setBusy] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [newName, setNewName] = useState(entry.name);
+  const [newBase, setNewBase] = useState(base);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const isContainer = entry.kind === "container";
+  const { over: dropOver, handlers: dropHandlers } = useFolderDrop(
+    isContainer,
+    entry.url,
+    onUploadToFolder,
+  );
+  const isImage = entry.kind === "resource" && isImageName(safeDecode(entry.name));
 
   async function doDelete() {
     setBusy(true);
@@ -835,14 +946,7 @@ function Row({
       const res = await podFetch()(entry.url);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = entry.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      saveBlob(blob, safeDecode(entry.name));
     } catch (err) {
       toast.error(`Download failed: ${String(err)}`);
     } finally {
@@ -852,10 +956,10 @@ function Row({
 
   async function onRenameSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = newName.trim();
-    if (!trimmed || trimmed === entry.name) {
+    const nextDisplay = newBase.trim() + ext;
+    if (!newBase.trim() || nextDisplay === displayedName) {
       setRenaming(false);
-      setNewName(entry.name);
+      setNewBase(base);
       return;
     }
     if (entry.kind === "container") {
@@ -865,9 +969,7 @@ function Row({
     }
     setBusy(true);
     try {
-      const parent = entry.url.slice(0, entry.url.lastIndexOf("/") + 1);
-      const target = parent + encodeURIComponent(trimmed);
-      await rename(entry.url, target);
+      await renameFile({ fromUrl: entry.url, newDisplayName: nextDisplay });
       setRenaming(false);
       onChanged();
     } catch (err) {
@@ -878,18 +980,32 @@ function Row({
   }
 
   return (
-    <li className="group flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
-      <Icon kind={entry.kind} name={entry.name} />
+    <li
+      {...dropHandlers}
+      className={`group flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50 ${
+        dropOver ? "bg-primary/5 ring-2 ring-inset ring-primary" : ""
+      }`}
+    >
+      {isImage ? (
+        <span className="inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+          <ImageThumbnail url={entry.url} alt={displayedName} className="size-9" />
+        </span>
+      ) : (
+        <Icon kind={entry.kind} name={entry.name} />
+      )}
       {renaming ? (
         <form onSubmit={onRenameSubmit} className="flex-1 flex items-center gap-2">
           <Input
             type="text"
             autoFocus
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            value={newBase}
+            onChange={(e) => setNewBase(e.target.value)}
             className="h-8 flex-1"
             data-testid={`rename-input-${entry.name}`}
           />
+          {ext ? (
+            <span className="shrink-0 font-mono text-xs text-muted-foreground">{ext}</span>
+          ) : null}
           <Button type="submit" size="sm" disabled={busy}>
             Save
           </Button>
@@ -899,7 +1015,7 @@ function Row({
             variant="outline"
             onClick={() => {
               setRenaming(false);
-              setNewName(entry.name);
+              setNewBase(base);
             }}
           >
             Cancel
